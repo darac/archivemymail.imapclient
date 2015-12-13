@@ -2,6 +2,7 @@
 
 import archivemymail
 
-config = archivemail.loadconfig()
+config = archivemymail.Config()
 
-archivemymail.main()
+for account in config.accounts:
+    archivemymail.process(account)
