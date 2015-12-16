@@ -3,8 +3,10 @@
 import logging
 from collections import deque
 
-import archivemymail
 from imapclient import IMAPClient
+
+import archivemymail
+
 
 def process(account):
     (user, password) = account.split(':', 1)
@@ -18,7 +20,7 @@ def process(account):
     mboxes = deque(archivemymail.server.list_folders())
     while len(mboxes):
         mbox = mboxes.popleft()
-        disposition = archivemymail.archivebox(mbox)
+        disposition = archivemymail.archivebox(mbox, user)
         if disposition & archivemymail.HAVE_ARCHIVED \
                 and not disposition & archivemymail.MBOX_DELETED \
                 and archivemymail.config.do_learning:

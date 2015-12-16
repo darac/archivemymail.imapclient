@@ -1,10 +1,24 @@
 #!env python3
 
 import datetime
+import math
 import sqlite3
 import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+import archivemymail
+
+
+def format_size(bytes_):
+    if bytes_ < 1024 * 1.5:  # 1.5 kb
+        return "%d  bytes" % bytes_
+    elif bytes_ < 1024 * 1024 * 1.5:  # 1.5 Mb
+        return "%d kbytes" % math.floor(bytes_ / 1024)
+    elif bytes_ < 1024 * 1024 * 1024 * 1.5:  # 1.5 Gb
+        return "%d Mbytes" % math.floor(bytes_ / (1024 * 1024))
+    else:
+        return "%d Gbytes" % math.floor(bytes_ / (1024 * 1024 * 1024))
 
 
 class StatsMan:
@@ -51,8 +65,7 @@ class StatsMan:
 
     def summarise(self):
         text = self.text_header(
-                "archivemymail report for {:%A %d %B %Y}"
-                    .format(datetime.date.today()))
+                "archivemymail report for {:%A %d %B %Y}".format(datetime.date.today()))
         html = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -130,7 +143,7 @@ class StatsMan:
                         WHERE user=? AND imapbox=?''', (user[0], imapbox[0])):
                     text += "{:.<30} {:.<30} {:.<30} {:<11}\n".format(
                             message[0][-30:],
-                            parse_subject(message[1], left=-30),
+                            archivemymail.parse_subject(message[1], left=-30),
                             message[4][-30:],
                             format_size(message[3]))
                     if evenrow:
@@ -139,7 +152,7 @@ class StatsMan:
                         html += '<table class="odd row"><tr>'
                     evenrow = not evenrow
                     for h in (['four', message[0]],
-                              ['three', parse_subject(message[1])],
+                              ['three', archivemymail.parse_subject(message[1])],
                               ['three', message[4]],
                               ['two', format_size(message[3])]):
                         html += '''\
