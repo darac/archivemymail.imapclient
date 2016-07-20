@@ -12,10 +12,12 @@ from appdirs import user_config_dir
 
 
 class Config:
+
     def __init__(self):
-        # Start with an empty dictionary
+        # Start with no configuration
         self.__dict__ = {}
 
+    def load(self):
         # Load static config from a file
         try:
             with open(os.path.join(user_config_dir('archivemymail', 'Darac'), 'config.yml'), 'r') as f:
