@@ -2,10 +2,11 @@ from __future__ import print_function
 
 import io
 import os
-import sys
 
-from setuptools import setup
-from setuptools.command.test import test as TestCommand
+try:
+    from setuptools.core import setup
+except ImportError:
+    from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -23,33 +24,18 @@ def read(*filenames, **kwargs):
 long_description = read('README.txt', 'CHANGES.txt')
 
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
-
-
 setup(
         name="archivemymail",
-        version=1,
+    version='1.0',
         author="Paul Saunders",
-        tests_require=['pytest'],
         install_requires=['imapclient>=1.0',
                           'pyyaml>=3.11',
                           'appdirs>=1.4.0'],
-        cmdclass={'test': PyTest},
         author_email='darac@darac.org.uk',
         description='Archive Mail to MBoxes, with filtering through Spam Learning',
         long_description=long_description,
-        packages=['archivemymail'],
-        include_packages_data=True,
+    packages=['archivemymail', 'archivemymail.tests'],
         platforms='any',
-        test_suite='archivemymail.test.test_archivemymail',
-        extras_require={'testing': ['pytest']},
+    test_suite='archivemymail.tests.get_suite',
+    scripts=['archivemymail.py'],
 )
