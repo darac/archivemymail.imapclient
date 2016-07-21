@@ -5,7 +5,10 @@ from __future__ import (absolute_import, division,
 
 import argparse
 import os
-from builtins import *
+try:
+    from builtins import *
+except ImportError:
+    from future_builtins import *
 
 import yaml
 from appdirs import user_config_dir

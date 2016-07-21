@@ -1,4 +1,5 @@
 #!env python3
+# vim: set fileencoding=utf8 :
 
 import email.parser
 import logging

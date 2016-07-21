@@ -1,11 +1,11 @@
 # implement basic tests
 import unittest
 
-
 def get_suite():
     "Return a unittest.TestSuite."
-    import StatsMan
+
+    import test_StatsMan
 
     loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(StatsMan.tests)
+    suite = loader.loadTestsFromModule(test_StatsMan)
     return suite
