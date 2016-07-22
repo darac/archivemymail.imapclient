@@ -1,3 +1,6 @@
+appdirs>=1.4.0
 codecov>=2.0.5
+imapclient>=1.0
+pyyaml>=3.11
 setuptools>=18.8.1
-IMAPClient>=1.0.1
+unittest>=3.2
