@@ -28,6 +28,7 @@ class StatsMan:
         self.cur = self.conn.cursor()
         self.cur.execute('''CREATE TABLE imapboxes
          (user text, imapbox text)''')
+        self.cur.execute('''CREATE UNIQUE INDEX IF NOT EXISTS boxname ON imapboxes (user, imapbox)''')
         self.cur.execute('''CREATE TABLE data (
                 user text,
                 imapbox text,
@@ -42,8 +43,11 @@ class StatsMan:
         self.user = None
 
     def newbox(self, user, box):
-        self.cur.execute('''INSERT INTO imapboxes (user, imapbox)
-         VALUES (?,?)''', (user, box))
+        try:
+            self.cur.execute('''INSERT INTO imapboxes (user, imapbox)
+             VALUES (?,?)''', (user, box))
+        except sqlite3.IntegrityError:
+            pass
         self.imapbox = box
         self.user = user
 
