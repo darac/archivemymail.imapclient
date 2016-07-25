@@ -3,4 +3,4 @@ codecov>=2.0.5
 imapclient>=1.0
 pyyaml>=3.11
 setuptools>=18.8.1
-unittest>=3.2
+pytest>=2.9

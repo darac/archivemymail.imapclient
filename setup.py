@@ -38,4 +38,6 @@ setup(
     platforms='any',
     test_suite='archivemymail.tests.get_suite',
     scripts=['archivemymail.py'],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 )
