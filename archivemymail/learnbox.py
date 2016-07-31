@@ -1,4 +1,4 @@
-#!env python3
+# !env python3
 
 import logging
 import math
@@ -27,26 +27,26 @@ class Progress:
 
         subject = archivemymail.parse_subject(message['Subject'], right=50)
         if is_spam:
-            spamham = "[Learn-SPAM]"
+            spamham = '[Learn-SPAM]'
         else:
-            spamham = "[Learn-HAM ]"
+            spamham = '[Learn-HAM ]'
         try:
-            line = "{progress}{spamham} {subject:-50}".format(subject=subject, spamham=spamham,
+            line = '{progress}{spamham} {subject:-50}'.format(subject=subject, spamham=spamham,
                                                               progress=progress)
         except TypeError:
-            line = "{progress}{spamham} {subject:-50}".format(subject="<No Subject>", spamham=spamham,
+            line = '{progress}{spamham} {subject:-50}'.format(subject='<No Subject>', spamham=spamham,
                                                               progress=progress)
         logging.info(line)
 
 
 def learnbox(mbox):
-    if mbox.lower().find('spam') == -1:
+    if mbox.lower().find('spam') ==  - 1:
         spamham = 'spam'
     else:
         spamham = 'ham'
     archivemymail.server.select_folder(readonly=True)
     msg_list = archivemymail.server.search(['NOT', 'DELETED'])
-    logging.info("%d remaining messages to learn", len(msg_list))
+    logging.info('%d remaining messages to learn', len(msg_list))
 
     p = Progress(len(msg_list))
 
@@ -54,9 +54,10 @@ def learnbox(mbox):
         message = archivemymail.server.fetch(msg_num, 'RFC822')[msg_num]['RFC822']
         p.log(message, spamham == 'spam')
         if archivemymail.config.dry_run:
-            logging.info("Would learn %s folder: %s", spamham, mbox)
+            logging.info('Would learn %s folder: %s', spamham, mbox)
         else:
-            logging.debug("Learning %s folder: %s", spamham, mbox)
+            logging.debug('Learning %s folder: %s', spamham, mbox)
             subprocess.run(['sa-learn', '--{}'.format(spamham), '--no-sync',
                             '--dbpath', archivemymail.config.bayes_dir],
                            input=message).check_returncode()
+

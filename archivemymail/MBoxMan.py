@@ -1,4 +1,4 @@
-#!env python3
+# !env python3
 
 import logging
 import mailbox
@@ -35,7 +35,7 @@ class NullBox:
 
 class MBoxMan:
     def __init__(self, user, boxroot, statsman, dryrun=True, compression='gz'):
-        self.user = (user.split('@', 1))[0]  # Strip off '@...'
+        self.user = (user.split('@', 1))[0]# Strip off '@...'
         self.boxroot = boxroot
         self.statsman = statsman
         self.dryrun = dryrun
@@ -57,17 +57,17 @@ class MBoxMan:
             # Already decompressed
             return
         elif os.path.exists(fullpath + '.gz'):
-            logging.debug("GZip decompressing...")
-            ret = subprocess.run(['gzip', '-d', fullpath + '.gz'])
+            logging.debug('GZip decompressing...')
+            ret = subprocess.run(['gzip', '-d', fullpath+'.gz'])
         elif os.path.exists(fullpath + '.bz2'):
-            logging.debug("BZip decompressing...")
-            ret = subprocess.run(['bzip2', '-d', fullpath + '.bz2'])
+            logging.debug('BZip decompressing...')
+            ret = subprocess.run(['bzip2', '-d', fullpath+'.bz2'])
         elif os.path.exists(fullpath + '.xz'):
-            logging.debug("XZip decompressing...")
-            ret = subprocess.run(['xz', '-d', fullpath + '.xz'])
+            logging.debug('XZip decompressing...')
+            ret = subprocess.run(['xz', '-d', fullpath+'.xz'])
         elif os.path.exists(fullpath + '.lz4'):
-            logging.debug("LZip decompressing...")
-            ret = subprocess.run(['lzop', '-d', fullpath + '.lz4'])
+            logging.debug('LZip decompressing...')
+            ret = subprocess.run(['lzop', '-d', fullpath+'.lz4'])
         if ret is not None:
             ret.check_returncode()
 
@@ -93,7 +93,7 @@ class MBoxMan:
         if os.path.exists(fullpath + '.' + extension):
             return FileExistsError
 
-        logging.debug("Compressing %{f}s -> %{f}s.%{e}s".format(f=fullpath, e=extension))
+        logging.debug('Compressing %{f}s -> %{f}s.%{e}s'.format(f=fullpath, e=extension))
         subprocess.run([compressor, '-9', fullpath])
 
     def setbox(self, path, spambox=False):
@@ -119,7 +119,7 @@ class MBoxMan:
             # Create the target directory, if necessary
             os.makedirs(os.path.dirname(fullpath))
 
-        logging.debug("Opening %s", fullpath)
+        logging.debug('Opening %s', fullpath)
         if self.dryrun:
             self.currentbox = NullBox(path)
         else:
@@ -134,10 +134,10 @@ class MBoxMan:
 
     def add(self, message):
         if 'Message-ID' in message and \
-                        message['Message-ID'] not in self.msgids:
+                        message['Message-ID']not  in self.msgids:
             self.currentbox.add(message)
             self.msgids.append(message['Message-ID'])
-        elif 'Message-ID' not in message:
+        elif 'Message-ID'not  in message:
             # If the message being added has no Message-ID,
             # we can't check for duplicates, so add it anyway
             self.currentbox.add(message)
@@ -152,9 +152,9 @@ class MBoxMan:
             spamham = 'ham'
 
         if self.dryrun:
-            logging.info("Would learn %s mbox: %s", spamham, self.boxpath)
+            logging.info('Would learn %s mbox: %s', spamham, self.boxpath)
         else:
-            logging.info("Learning %s mbox: %s", spamham, self.boxpath)
+            logging.info('Learning %s mbox: %s', spamham, self.boxpath)
             ret = subprocess.run(['sa-learn',
                                   '--%s'.format(spamham),
                                   '--no-sync,'
@@ -171,3 +171,4 @@ class MBoxMan:
             self.learn()
         if not self.dryrun:
             self._compress(os.path.join(self.boxroot, self.boxpath), archivemymail.config.compression)
+

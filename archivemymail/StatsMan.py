@@ -11,7 +11,9 @@ import archivemymail
 
 
 def format_size(bytes_):
-    if bytes_ < 1024 * 1.5:  # 1.5 kb
+    if bytes_ == 1:
+        return "%d  byte " % bytes_
+    elif bytes_ < 1024 * 1.5:  # 1.5 kb
         return "%d  bytes" % bytes_
     elif bytes_ < 1024 * 1024 * 1.5:  # 1.5 Mb
         return "%d kbytes" % math.floor(bytes_ / 1024)
@@ -21,7 +23,7 @@ def format_size(bytes_):
         return "%d Gbytes" % math.floor(bytes_ / (1024 * 1024 * 1024))
 
 
-class StatsMan:
+class StatsManClass:
     def __init__(self):
         self.conn = sqlite3.connect('')
         self.conn.text_factory = str
@@ -51,7 +53,16 @@ class StatsMan:
         self.imapbox = box
         self.user = user
 
-    def add(self, box, message):
+    def add(self, message, box=None):
+        if self.user is None:
+            raise RuntimeError("Can't add without a username")
+        if box is None:
+            box=self.imapbox
+        boxes = self.cur.execute ('''
+            SELECT imapbox FROM imapboxes WHERE user=? AND imapbox=?
+            ''', (self.user, box)).fetchall()
+        if len(boxes) != 1:
+            self.newbox(user=self.user, box=box)
         self.cur.execute('''INSERT INTO data
                 (user, imapbox, mbox, sender, subject, date, size)
                 VALUES (?,?,?,?,?,?,?)''',
