@@ -30,15 +30,15 @@ archivedate = datetime.datetime.combine(
         _midnight)
 
 
-def parse_subject(subj, left=None, right=None):
-    subject_pairs = email.header.decode_header(subj)
-    subject = ''
+def parse_header(header, left=None, right=None):
+    header_pairs = email.header.decode_header(header)
+    new_header = ''
     try:
-        for part in subject_pairs:
-            subject += part[0].decode(part[1] or 'utf-8', 'replace')
+        for part in header_pairs:
+            new_header += part[0].decode(part[1] or 'utf-8', 'replace')
     except UnicodeDecodeError:
-        subject = '<Unintelligible Subject>'
+        new_header = '<Unintelligible Subject>'
     except AttributeError:
-        subject = subj
-    return subject[left:right]
+        new_header = header
+    return new_header[left:right]
 

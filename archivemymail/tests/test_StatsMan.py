@@ -3,6 +3,7 @@ import sys
 import sqlite3
 import email.message
 import pytest
+import subprocess
 
 import archivemymail
 
@@ -12,6 +13,12 @@ test_message1['From'] = 'test@example.com'
 test_message1['To'] = 'recip@example.com'
 test_message1['Date'] = '01-Jan-2010'
 test_message1.set_payload('This is a test message\n')
+
+test_message2 = email.message.Message()
+test_message2['Subject'] = "GewSt:=?UTF-8?B?IFdlZ2ZhbGwgZGVyIFZvcmzDpHVmaWdrZWl0?="
+test_message2['From'] = 'John Doe <j@example.org>'
+test_message2['To'] = 'bill@example.org'
+test_message2.set_payload("Another test\n")
 
 class TestStatsMan():
 
@@ -99,7 +106,7 @@ class TestStatsMan():
         assert self.Manager.imapbox is None
         assert self.Manager.user is None
         with pytest.raises(RuntimeError):
-            self.Manager.add(message=test_message1, box='test')
+            self.Manager.add(message=test_message1, mbox='test')
         assert self.Manager.user is None
         assert self.Manager.imapbox != 'test'
 
@@ -109,17 +116,17 @@ class TestStatsMan():
         self.Manager.newbox(user='user', box='INBOX')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
-        self.Manager.add(message=test_message1, box='test')
+        self.Manager.add(message=test_message1, mbox='test')
         assert self.Manager.user == 'user'
-        assert self.Manager.imapbox == 'test'
+        assert self.Manager.imapbox == 'INBOX'
         
     def test_text_header(self):
         test_data = [
-            ["", None, "\n\n"],
-            ["1", None, "1\n=\n"],
-            ["blah blah", None, "blah blah\n=========\n"],
-            ["blah blah", '+', "blah blah\n+++++++++\n"],
-            ["blah blah", 'foo', "blah blah\nfoofoofoofoofoofoofoofoofoo\n"],
+            ["", None, "\n"],
+            ["1", None, "1\n="],
+            ["blah blah", None, "blah blah\n========="],
+            ["blah blah", '+', "blah blah\n+++++++++"],
+            ["blah blah", 'foo', "blah blah\n========="],
         ]
 
         for t in test_data:
@@ -128,3 +135,25 @@ class TestStatsMan():
             else:
                 assert self.Manager.text_header(t[0], t[1]) == t[2]
 
+    def test_summarise(self, monkeypatch):
+        class Pope():
+            def __init__(self, args, stdin=None):
+                assert len(args) == 3
+                assert stdin == subprocess.PIPE
+            def communicate(self, str):
+                assert 'Subject: archivemymail' in str
+        monkeypatch.setattr(subprocess, 'Popen', Pope)
+
+
+        self.Manager = archivemymail.StatsMan.StatsManClass()
+        self.Manager.newbox(user='tom', box='INBOX')
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
+        self.Manager.newbox(user='bill', box='INBOX')
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
+        self.Manager.newbox(user='bill', box='Sent')
+        self.Manager.add(mbox='Sent.bz2', message=test_message2)
+        self.Manager.add(mbox='Sent.bz2', message=test_message2)
+        self.Manager.summarise()

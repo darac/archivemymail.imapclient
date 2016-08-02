@@ -1,0 +1,23 @@
+{% for user in users %}\
+{% with h=text_header("User: " + user) %}\
+$h
+{% end %}\
+
+{% for imapbox in imapboxes[user] %}\
+{% with h=text_header("Folder: " + imapbox, '-') %}\
+$h
+{% end %}\
+
+{% for message in messages[user][imapbox] %}\
+Sender:   ${parse(message['sender'])}
+Subject:  ${parse(message['subject'], right=50)}
+Size:     ${message['size']}
+Filed To: ${message['mbox']}
+
+{% end %}\
+----- Archived ${boxsizes[user][imapbox]} from ${imapbox}
+
+{% end %}\
+===== Archived ${boxsizes[user]['%']} for ${user}
+
+{% end %}\

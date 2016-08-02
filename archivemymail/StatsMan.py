@@ -1,14 +1,24 @@
 #!env python3
+# vim: set foldmethod=marker:
 
-import datetime
-import math
-import sqlite3
-import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from genshi.template import TemplateLoader
+from genshi.core import Stream
+from genshi.template.text import NewTextTemplate
+import datetime
+import math
+import os
+import sqlite3
+import subprocess
+import itertools
 
 import archivemymail
 
+loader = TemplateLoader(
+    os.path.join(os.path.dirname(__file__), 'templates'),
+    auto_reload=True
+)
 
 def format_size(bytes_):
     if bytes_ == 1:
@@ -27,6 +37,7 @@ class StatsManClass:
     def __init__(self):
         self.conn = sqlite3.connect('')
         self.conn.text_factory = str
+        self.conn.row_factory = sqlite3.Row
         self.cur = self.conn.cursor()
         self.cur.execute('''CREATE TABLE imapboxes
          (user text, imapbox text)''')
@@ -53,22 +64,15 @@ class StatsManClass:
         self.imapbox = box
         self.user = user
 
-    def add(self, message, box=None):
+    def add(self, mbox, message):
         if self.user is None:
             raise RuntimeError("Can't add without a username")
-        if box is None:
-            box=self.imapbox
-        boxes = self.cur.execute ('''
-            SELECT imapbox FROM imapboxes WHERE user=? AND imapbox=?
-            ''', (self.user, box)).fetchall()
-        if len(boxes) != 1:
-            self.newbox(user=self.user, box=box)
         self.cur.execute('''INSERT INTO data
                 (user, imapbox, mbox, sender, subject, date, size)
                 VALUES (?,?,?,?,?,?,?)''',
                          (self.user,
                           self.imapbox,
-                          box,
+                          mbox,
                           message['From'],
                           message['Subject'],
                           message['Date'],
@@ -76,139 +80,57 @@ class StatsManClass:
 
     @staticmethod
     def text_header(text, underline='='):
-        return "{}\n{}\n".format(text, underline * len(text))
+        if len(underline) != 1:
+            underline = '='
+        return "{}\n{}".format(text, underline * len(text))
 
     def summarise(self):
-        text = self.text_header(
-                "archivemymail report for {:%A %d %B %Y}".format(datetime.date.today()))
-        html = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width"/>
-    <style type="text/css">
-'''
-        with open('ZurbInk/ink.css', 'r') as f:
-            html += f.readlines()
-
-        html += '''
-  </head>
-  <body style="background:Thistle">
-    <table class="body" style="background:Thistle">
-      <tr>
-        <td class="center" align="center" valign="top">
-          <center>
-            <table class="container"><tr><td>
-'''
-
-        for user in self.cur.execute("SELECT DISTINCT user FROM imapboxes"):
-            text += self.text_header("User: {}".format(user[0]), underline='-')
-            html += '''\
-<table class="user row"><tr><td class="wrapper last">
-  <table class="twelve columns"><tr><td class="text-pad">
-    <h2>User: {}</h2>
-  </td><td class="expander"/></tr></table>
-</td></tr></table>\n'''.format(user[0])
-            for imapbox in self.cur.execute(
-                    "SELECT DISTINCT imapbox FROM imapboxes WHERE user=?",
-                    user):
-                text += self.text_header(
-                        "Folder: {}".format(imapbox[0]), underline='-')
-                text += ("{:30} {:30} {:30} {:11}\n"
-                         .format('Sender', 'Subject', 'Filed to', 'Size'))
-                html += '''\
-<table class="mailbox row"><tr><td class="wrapper last">
-  <table class="twelve columns"><tr><td class="text-pad">
-    <h3>Folder: {}</h3>
-  </td><td class="expander"/></tr></table>
-</td></tr></table>\n'''.format(imapbox[0])
-                html += '''\
-<table class="header row"><tr>
-  <td class="wrapper">
-    <table class="four columns"><tr>
-      <td class="text-pad">Sender</td>
-      <td class="expander"/>
-    </tr></table>
-  </td>
-  <td class="wrapper">
-    <table class="three columns"><tr>
-      <td class="text-pad">Subject</td>
-      <td class="expander"/>
-    </tr></table>
-  </td>
-  <td class="wrapper">
-    <table class="three columns"><tr>
-      <td class="text-pad">Filed to</td>
-      <td class="expander"/>
-    </tr></table>
-  </td>
-  <td class="wrapper last">
-    <table class="two columns"><tr>
-      <td class="text-pad">Size</td>
-      <td class="expander"/>
-    </tr></table>
-  </td>
-</tr></table>\n'''
-                boxsize = 0
-                evenrow = True
-                for message in self.cur.execute('''
+        users = sorted([x[0] for x in self.cur.execute("SELECT DISTINCT user FROM imapboxes").fetchall()])
+        imapboxes = {}
+        messages = {}
+        boxsizes = {}
+        for user in users:
+            imapboxes[user] = [x['imapbox'] for x in self.cur.execute("SELECT DISTINCT imapbox FROM imapboxes WHERE user=?",(user,)).fetchall()]
+            messages[user] = {}
+            boxsizes[user] = {}
+            boxsizes[user]['%'] = 0
+            for imapbox in imapboxes[user]:
+                messages[user][imapbox] = self.cur.execute('''
                         SELECT sender, subject, date, size, mbox
                         FROM data
-                        WHERE user=? AND imapbox=?''', (user[0], imapbox[0])):
-                    text += "{:.<30} {:.<30} {:.<30} {:<11}\n".format(
-                            message[0][-30:],
-                            archivemymail.parse_subject(message[1], left=-30),
-                            message[4][-30:],
-                            format_size(message[3]))
-                    if evenrow:
-                        html += '<table class="even row"><tr>'
-                    else:
-                        html += '<table class="odd row"><tr>'
-                    evenrow = not evenrow
-                    for h in (['four', message[0]],
-                              ['three', archivemymail.parse_subject(message[1])],
-                              ['three', message[4]],
-                              ['two', format_size(message[3])]):
-                        html += '''\
-<td class="wrapper">
-  <table class="{0[0]} columns"><tr>
-    <td class="text-pad">{0[1]}</td>
-    <td class="expander"/>
-  </tr></table>
-</td>\n'''.format(h)
-                    html += '</tr></table>'
-                    boxsize += message[3]
-                # End of imapbox
-                text += "{:.>104}".format(
-                        "Total Uncompressed Size: " + format_size(boxsize))
-                html += '''\
-<table class="total row"><tr>
-  <td class="wrapper last">
-    <table class="twelve columns"><tr>
-      <td class="text-pad">{}</td>
-    </tr></table>
-  </td></tr>
-</table>\n'''.format("Total Uncompressed Size: " + format_size(boxsize))
-            # End of user
-            html += '</td></tr></table>'
-        # End of message
-        html += '''\
-          </center>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-'''
+                        WHERE user=? AND imapbox=?''', (user, imapbox)).fetchall()
+                # messages ends up as a list of sqlite3.Row objects
+                boxsize = sum(message['size'] for message in messages[user][imapbox])
+                boxsizes[user][imapbox] = format_size(boxsize)
+                boxsizes[user]['%'] += boxsize
+            boxsizes[user]['%'] = format_size(boxsizes[user]['%'])
+
+        tmpl = loader.load('zurbink.html')
+        htmlstream = tmpl.generate(
+                users=users,
+                imapboxes=imapboxes,
+                messages=messages,
+                boxsizes=boxsizes,
+                parse=archivemymail.parse_header)
+        tmpl = loader.load('plaintext.txt', cls=NewTextTemplate)
+        textstream = tmpl.generate(
+                users=users,
+                imapboxes=imapboxes,
+                messages=messages,
+                boxsizes=boxsizes,
+                text_header=self.text_header,
+                parse=archivemymail.parse_header)
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = 'archivemymail report for ' + \
                          datetime.date.today().strftime("%A %d %B %Y")
         msg['From'] = 'root'
         msg['To'] = 'root'
-        msg.attach(MIMEText(text, 'plain'))
-        msg.attach(MIMEText(html, 'html'))
+        msg.preamble = msg['Subject']
+        html = htmlstream.render('html')
+        text = textstream.render('text')
+        msg.attach(MIMEText(html, 'html', 'utf-8'))
+        msg.attach(MIMEText(text, 'plain', 'utf-8'))
         p = subprocess.Popen(["/usr/sbin/sendmail", "-t", "-oi"],
                              stdin=subprocess.PIPE)
         p.communicate(msg.as_string())
