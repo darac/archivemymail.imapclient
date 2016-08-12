@@ -4,7 +4,7 @@ import datetime
 import email.header
 
 from .Config import Config
-from .MBoxMan import MBoxMan
+from .MBoxMan import MBoxManClass
 from .StatsMan import StatsManClass
 from .archivebox import archivebox
 from .learnbox import learnbox

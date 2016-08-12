@@ -29,11 +29,15 @@ class NullBox:
         return self
 
     @staticmethod
+    def __next__():
+        raise StopIteration
+
+    @staticmethod
     def next():
-        return StopIteration
+        raise StopIteration
 
 
-class MBoxMan:
+class MBoxManClass:
     def __init__(self, user, boxroot, statsman, dryrun=True, compression='gz'):
         self.user = (user.split('@', 1))[0]# Strip off '@...'
         self.boxroot = boxroot
@@ -48,31 +52,50 @@ class MBoxMan:
 
     def __del__(self):
         # Unlock any locked boxes
-        self.currentbox.unlock()
+        if self.currentbox is not None:
+            self.currentbox.unlock()
 
     @staticmethod
     def _decompress(fullpath):
+        def run(cmd):
+            try:
+                ret = subprocess.run(cmd)
+            except AttributeError:
+                ret = subprocess.Popen(cmd).communicate()
+            return ret
+        def check(obj):
+            try:
+                obj.check_returncode()
+            except AttributeError:
+                if obj.returncode:
+                    raise subprocess.CalledProcessError(obj.returncode, obj.args)
         ret = None
         if os.path.exists(fullpath):
             # Already decompressed
             return
         elif os.path.exists(fullpath + '.gz'):
             logging.debug('GZip decompressing...')
-            ret = subprocess.run(['gzip', '-d', fullpath+'.gz'])
+            ret = run(['gzip', '-d', fullpath+'.gz'])
         elif os.path.exists(fullpath + '.bz2'):
             logging.debug('BZip decompressing...')
-            ret = subprocess.run(['bzip2', '-d', fullpath+'.bz2'])
+            ret = run(['bzip2', '-d', fullpath+'.bz2'])
         elif os.path.exists(fullpath + '.xz'):
             logging.debug('XZip decompressing...')
-            ret = subprocess.run(['xz', '-d', fullpath+'.xz'])
+            ret = run(['xz', '-d', fullpath+'.xz'])
         elif os.path.exists(fullpath + '.lz4'):
             logging.debug('LZip decompressing...')
-            ret = subprocess.run(['lzop', '-d', fullpath+'.lz4'])
+            ret = run(['lzop', '-d', fullpath+'.lz4'])
         if ret is not None:
             ret.check_returncode()
 
     @staticmethod
     def _compress(fullpath, compression):
+        def run(cmd):
+            try:
+                ret = subprocess.run(cmd)
+            except AttributeError:
+                ret = subprocess.Popen(cmd).communicate()
+            return ret
         if not os.path.exists(fullpath):
             return FileNotFoundError
         compressor = None
@@ -82,19 +105,22 @@ class MBoxMan:
             extension = 'gz'
         elif compression == 'bz2' or compression == 'bz' or compression == 'bzip2' or compression == 'bzip':
             compressor = 'bzip2'
-            extension = '.bz2'
+            extension = 'bz2'
         elif compression == 'xz' or compression == 'xzip':
             compressor = 'xz'
             extension = 'xz'
         elif compression == 'lz' or compression == 'lzip' or compression == 'lz4':
             compressor = 'lzop'
             extension = 'lz4'
+        else:
+            # No compression called for
+            return
 
         if os.path.exists(fullpath + '.' + extension):
             return FileExistsError
 
-        logging.debug('Compressing %{f}s -> %{f}s.%{e}s'.format(f=fullpath, e=extension))
-        subprocess.run([compressor, '-9', fullpath])
+        logging.debug('Compressing {f} -> {f}.{e}'.format(f=fullpath, e=extension))
+        run([compressor, '-9', fullpath])
 
     def setbox(self, path, spambox=False):
         if self.currentbox is not None:
@@ -125,7 +151,11 @@ class MBoxMan:
         else:
             self._decompress(fullpath)
             self.currentbox = mailbox.mbox(path)
-        self.currentbox.lock()
+        try:
+            self.currentbox.lock()
+        except mailbox.ExternalClashError:
+            self.currentbox.unlock()
+            self.currentbox.lock()
 
         # Scan the box, reading Message-IDs
         self.msgids = []
@@ -134,7 +164,7 @@ class MBoxMan:
 
     def add(self, message):
         if 'Message-ID' in message and \
-                        message['Message-ID']not  in self.msgids:
+                        message['Message-ID'] not in self.msgids:
             self.currentbox.add(message)
             self.msgids.append(message['Message-ID'])
         elif 'Message-ID'not  in message:
