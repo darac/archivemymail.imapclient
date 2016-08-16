@@ -26,16 +26,16 @@ class Config (collections.MutableMapping):
         try:
             with open(os.path.join(user_config_dir('archivemymail', 'Darac'), 'config.yml'), 'r') as f:
                 self.__dict__ = yaml.load(f)
-        except FileNotFoundError:
+        except (OSError, IOError) as e:
             pass
 
         # Override the config with command line args
         parser = argparse.ArgumentParser(description="Archive mail from IMAP to compressed mbox")
         parser.add_argument('-n', '--dry-run', dest='dry_run', action='store_true',
-                            default=self.setdefault(self['dry_run'], False),
+                            default=self.setdefault('dry_run', False),
                             help="show what WOULD have been done")
         parser.add_argument('-S', '--no-learn', dest='do_learning', action='store_false',
-                            default=self.setdefault(self['doLearning'], True),
+                            default=self.setdefault('do_learning', True),
                             help="don't pass messages to spamassassin")
         group = parser.add_mutually_exclusive_group(required=False)
         group.add_argument('-z', '--gzip', dest='compression', action='store_const', const='gz',
@@ -45,35 +45,39 @@ class Config (collections.MutableMapping):
         group.add_argument('-J', '--xz', dest='compression', action='store_const', const='xz',
                            help="XZ-compress mboxes (default)")
         parser.add_argument('-d', '--target-dir', dest='target_dir', action='store',
-                            default=self.setdefault(self['target_dir'], '/var/mail/%u/archive/'),
+                            default=self.setdefault('target_dir', '/var/mail/%u/archive/'),
                             help="root location for the mboxes")
         parser.add_argument('-b', '--bayes-dir', dest='bayes_dir', action='store',
-                            default=self.setdefault(self['bayes_dir'], '/var/lib/amavis/.spamassassin'),
+                            default=self.setdefault('bayes_dir', '/var/lib/amavis/.spamassassin'),
                             help="location of spamassassin's bayes database")
         parser.add_argument('-H', '--server', dest='server', action='store',
-                            default=self.setdefault(self['server'], 'mail.darac.org.uk'),
+                            default=self.setdefault('server', 'mail.darac.org.uk'),
                             help="hostname of mail server")
         parser.add_argument('--debug', dest='debug', action='store_true',
-                            default=self.setdefault(self['debug'], False),
+                            default=self.setdefault('debug', False),
                             help="output extra logging")
         parser.add_argument('-a', '--account', dest='accounts', action='append',
-                            default=self['accounts'],
+                            default=self.setdefault('accounts', []),
                             help="account to archive (can be specified multiple times)",
                             metavar="USER:PASSWORD")
 
         args = parser.parse_args()
 
         # Consolidate the options
-        self.dry_run = args.dry_run
-        self.do_learning = args.do_learning
-        self.compression = self.setdefault(args.compression, 'xz')
-        if self.compression is None:
-            self.compression = 'xz'
-        self.target_dir = args.target_dir
-        self.bayes_dir = args.bayes_dir
-        self.server = args.server
-        self.debug = args.debug
-        self.accounts = args.accounts
+        self['dry_run'] = args.dry_run
+        self['do_learning'] = args.do_learning
+        if args.compression is None:
+            if 'compression' not in self.__dict__ or self['compression'] is None:
+                self['compression'] = 'xz'
+            # Else keep with self.compression
+        else:
+            self['compression'] = args.compression
+
+        self['target_dir'] = args.target_dir
+        self['bayes_dir'] = args.bayes_dir
+        self['server'] = args.server
+        self['debug'] = args.debug
+        self['accounts'] = args.accounts
 
     # These are the methods required by collections.MutableMapping, which uses them to synthesize this class as a dict-like object
     def __getitem__(self, key):
