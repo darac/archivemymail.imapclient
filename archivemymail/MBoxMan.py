@@ -86,7 +86,7 @@ class MBoxManClass:
             logging.debug('LZip decompressing...')
             ret = run(['lzop', '-d', fullpath+'.lz4'])
         if ret is not None:
-            ret.check_returncode()
+            check(ret)
 
     @staticmethod
     def _compress(fullpath, compression):

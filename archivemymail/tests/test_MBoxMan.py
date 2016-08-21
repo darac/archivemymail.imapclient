@@ -20,6 +20,15 @@ class TestNullBox:
             break
         assert counter == 0
 
+    def test_add(self):
+        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+        box.add("test")
+
+    def test_close(self):
+        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+        box.close()
+        
+
 @pytest.fixture(scope='session')
 def mbox_file(tmpdir_factory):
     fn = tmpdir_factory.mktemp('/tmp').join('pytest.mbox')
