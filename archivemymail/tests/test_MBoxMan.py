@@ -225,4 +225,4 @@ class TestMboxMan:
         self.manager.close()
 
         self.manager.dryrun = False
-        self.manager.close()
+        self.manager.close()       
