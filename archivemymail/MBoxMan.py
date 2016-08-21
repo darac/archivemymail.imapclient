@@ -39,7 +39,7 @@ class NullBox:
 
 class MBoxManClass:
     def __init__(self, user, boxroot, statsman, dryrun=True, compression='gz'):
-        self.user = (user.split('@', 1))[0]# Strip off '@...'
+        self.user = (user.split('@', 1))[0]  # Strip off '@...'
         self.boxroot = boxroot
         self.statsman = statsman
         self.dryrun = dryrun
@@ -63,30 +63,32 @@ class MBoxManClass:
             except AttributeError:
                 ret = subprocess.Popen(cmd).communicate()
             return ret
+
         def check(obj):
             try:
                 obj.check_returncode()
             except AttributeError:
                 if obj.returncode:
                     raise subprocess.CalledProcessError(obj.returncode, obj.args)
+
         ret = None
         if os.path.exists(fullpath):
             # Already decompressed
             return
         elif os.path.exists(fullpath + '.gz'):
             logging.debug('GZip decompressing...')
-            ret = run(['gzip', '-d', fullpath+'.gz'])
+            ret = run(['gzip', '-d', fullpath + '.gz'])
         elif os.path.exists(fullpath + '.bz2'):
             logging.debug('BZip decompressing...')
-            ret = run(['bzip2', '-d', fullpath+'.bz2'])
+            ret = run(['bzip2', '-d', fullpath + '.bz2'])
         elif os.path.exists(fullpath + '.xz'):
             logging.debug('XZip decompressing...')
-            ret = run(['xz', '-d', fullpath+'.xz'])
+            ret = run(['xz', '-d', fullpath + '.xz'])
         elif os.path.exists(fullpath + '.lz4'):
             logging.debug('LZip decompressing...')
-            ret = run(['lzop', '-d', fullpath+'.lz4'])
+            ret = run(['lzop', '-d', fullpath + '.lz4'])
         if ret is not None:
-            ret.check_returncode()
+            check(ret)
 
     @staticmethod
     def _compress(fullpath, compression):
@@ -96,6 +98,7 @@ class MBoxManClass:
             except AttributeError:
                 ret = subprocess.Popen(cmd).communicate()
             return ret
+
         if not os.path.exists(fullpath):
             return FileNotFoundError
         compressor = None
@@ -122,7 +125,7 @@ class MBoxManClass:
         logging.debug('Compressing {f} -> {f}.{e}'.format(f=fullpath, e=extension))
         run([compressor, '-9', fullpath])
 
-    def setbox(self, path, spambox=False):
+    def set_box(self, path, spambox=False):
         if self.currentbox is not None:
             if self.boxpath != path:
                 # Change of box
@@ -134,7 +137,7 @@ class MBoxManClass:
         else:
             # New box
             self.open(path)
-        self.statsman.newbox(self.user, path)
+        self.statsman.new_box(self.user, path)
         self.spambox = spambox
         return self.currentbox
 
@@ -167,7 +170,7 @@ class MBoxManClass:
                         message['Message-ID'] not in self.msgids:
             self.currentbox.add(message)
             self.msgids.append(message['Message-ID'])
-        elif 'Message-ID'not  in message:
+        elif 'Message-ID' not in message:
             # If the message being added has no Message-ID,
             # we can't check for duplicates, so add it anyway
             self.currentbox.add(message)
@@ -201,4 +204,3 @@ class MBoxManClass:
             self.learn()
         if not self.dryrun:
             self._compress(os.path.join(self.boxroot, self.boxpath), archivemymail.config.compression)
-

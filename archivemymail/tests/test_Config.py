@@ -1,14 +1,15 @@
+import sys
+
 import pytest
 import yaml
-import sys
 
 import archivemymail
 
-class TestConfig:
 
+class TestConfig:
     @classmethod
-    def setup(self):
-        self.Config = archivemymail.Config()
+    def setup(cls):
+        cls.Config = archivemymail.Config()
 
     def test_defaults(self):
         assert len(self.Config) == 0
@@ -47,15 +48,15 @@ class TestConfig:
     def test_load_fileonly(self, monkeypatch, tmpdir):
         # Start by writing the config file to a temporary file
         test_data = {
-            'dry_run' : False,
-            'do_learning' : True,
-            'compression' : 'bzip',
-            'target_dir' : '/tmp/target_dir',
-            'bayes_dir' : '/user/dir/bayes',
-            'server' : 'imap.example.org',
-            'debug' : True,
-            'accounts' : [ 'user:password', 'user2@example.com:letmein'],
-            }
+            'dry_run': False,
+            'do_learning': True,
+            'compression': 'bzip',
+            'target_dir': '/tmp/target_dir',
+            'bayes_dir': '/user/dir/bayes',
+            'server': 'imap.example.org',
+            'debug': True,
+            'accounts': ['user:password', 'user2@example.com:letmein'],
+        }
 
         d = tmpdir.mkdir("config")
         p = d.join('config.yml')
@@ -69,6 +70,7 @@ class TestConfig:
                 return str(p)
             else:
                 return "/".join(args)
+
         monkeypatch.setattr("os.path.join", myjoin)
 
         # Now call UUT

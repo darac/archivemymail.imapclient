@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division,
 
 import argparse
 import os
+
 try:
     from builtins import *
 except ImportError:
@@ -15,8 +16,7 @@ from appdirs import user_config_dir
 import collections
 
 
-class Config (collections.MutableMapping):
-
+class Config(collections.MutableMapping):
     def __init__(self):
         # Start with no configuration
         self.__dict__ = {}
@@ -69,7 +69,7 @@ class Config (collections.MutableMapping):
         if args.compression is None:
             if 'compression' not in self.__dict__ or self['compression'] is None:
                 self['compression'] = 'xz'
-            # Else keep with self.compression
+                # Else keep with self.compression
         else:
             self['compression'] = args.compression
 
@@ -79,7 +79,8 @@ class Config (collections.MutableMapping):
         self['debug'] = args.debug
         self['accounts'] = args.accounts
 
-    # These are the methods required by collections.MutableMapping, which uses them to synthesize this class as a dict-like object
+    # These are the methods required by collections.MutableMapping,
+    #  which uses them to synthesize this class as a dict-like object
     def __getitem__(self, key):
         return self.__dict__[key]
 
@@ -94,4 +95,3 @@ class Config (collections.MutableMapping):
 
     def __len__(self):
         return len(self.__dict__)
-

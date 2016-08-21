@@ -107,7 +107,7 @@ def archivebox(mbox, user):
                                                                     year=imapmessage['INTERNALDATE'].year,
                                                                     month=imapmessage['INTERNALDATE'].month))
         logging.debug(" + File is %s.%s", boxname, archivemymail.config.compression)
-        archivemymail.mboxman.setbox(boxname, mbox_name.lower().find('spam') == -1)
+        archivemymail.mboxman.set_box(boxname, mbox_name.lower().find('spam') == -1)
 
         # Log Progress
         progress.log(message, boxname, boxname.lower().find('spam') == 1)

@@ -1,17 +1,16 @@
 #!env python3
 # vim: set foldmethod=marker:
 
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from genshi.template import TemplateLoader
-from genshi.core import Stream
-from genshi.template.text import NewTextTemplate
 import datetime
 import math
 import os
 import sqlite3
 import subprocess
-import itertools
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from genshi.template import TemplateLoader
+from genshi.template.text import NewTextTemplate
 
 import archivemymail
 
@@ -19,6 +18,7 @@ loader = TemplateLoader(
     os.path.join(os.path.dirname(__file__), 'templates'),
     auto_reload=True
 )
+
 
 def format_size(bytes_):
     if bytes_ == 1:
@@ -55,7 +55,7 @@ class StatsManClass:
         self.imapbox = None
         self.user = None
 
-    def newbox(self, user, box):
+    def new_box(self, user, box):
         try:
             self.cur.execute('''INSERT INTO imapboxes (user, imapbox)
              VALUES (?,?)''', (user, box))
@@ -90,7 +90,9 @@ class StatsManClass:
         messages = {}
         boxsizes = {}
         for user in users:
-            imapboxes[user] = [x['imapbox'] for x in self.cur.execute("SELECT DISTINCT imapbox FROM imapboxes WHERE user=?",(user,)).fetchall()]
+            imapboxes[user] = [x['imapbox'] for x in
+                               self.cur.execute("SELECT DISTINCT imapbox FROM imapboxes WHERE user=?",
+                                                (user,)).fetchall()]
             messages[user] = {}
             boxsizes[user] = {}
             boxsizes[user]['%'] = 0
@@ -107,19 +109,19 @@ class StatsManClass:
 
         tmpl = loader.load('zurbink.html')
         htmlstream = tmpl.generate(
-                users=users,
-                imapboxes=imapboxes,
-                messages=messages,
-                boxsizes=boxsizes,
-                parse=archivemymail.parse_header)
+            users=users,
+            imapboxes=imapboxes,
+            messages=messages,
+            boxsizes=boxsizes,
+            parse=archivemymail.parse_header)
         tmpl = loader.load('plaintext.txt', cls=NewTextTemplate)
         textstream = tmpl.generate(
-                users=users,
-                imapboxes=imapboxes,
-                messages=messages,
-                boxsizes=boxsizes,
-                text_header=self.text_header,
-                parse=archivemymail.parse_header)
+            users=users,
+            imapboxes=imapboxes,
+            messages=messages,
+            boxsizes=boxsizes,
+            text_header=self.text_header,
+            parse=archivemymail.parse_header)
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = 'archivemymail report for ' + \

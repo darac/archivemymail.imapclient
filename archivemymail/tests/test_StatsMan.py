@@ -1,9 +1,8 @@
-import os
-import sys
-import sqlite3
 import email.message
-import pytest
+import sqlite3
 import subprocess
+
+import pytest
 
 import archivemymail
 
@@ -20,11 +19,11 @@ test_message2['From'] = 'John Doe <j@example.org>'
 test_message2['To'] = 'bill@example.org'
 test_message2.set_payload("Another test\n")
 
-class TestStatsMan():
 
+class TestStatsMan():
     @classmethod
-    def setup_class(self):
-        self.Manager = archivemymail.StatsManClass()
+    def setup_class(cls):
+        cls.Manager = archivemymail.StatsManClass()
 
     def test_check_defaults(self):
         assert isinstance(self.Manager.conn, sqlite3.Connection)
@@ -49,7 +48,7 @@ class TestStatsMan():
         ''').fetchall()) == 1
 
     def test_create_box(self):
-        self.Manager.newbox(user='username', box='INBOX')
+        self.Manager.new_box(user='username', box='INBOX')
 
         assert self.Manager.user == 'username'
         assert self.Manager.imapbox == 'INBOX'
@@ -59,7 +58,7 @@ class TestStatsMan():
         ''').fetchall()) == 1
 
     def test_change_box(self):
-        self.Manager.newbox(user='username', box='INBOX')
+        self.Manager.new_box(user='username', box='INBOX')
 
         assert self.Manager.user == 'username'
         assert self.Manager.imapbox == 'INBOX'
@@ -67,7 +66,7 @@ class TestStatsMan():
             SELECT user, imapbox FROM imapboxes
         ''').fetchall()) == 1
 
-        self.Manager.newbox(user='username', box='INBOX')
+        self.Manager.new_box(user='username', box='INBOX')
 
         assert self.Manager.user == 'username'
         assert self.Manager.imapbox == 'INBOX'
@@ -75,7 +74,7 @@ class TestStatsMan():
             SELECT user, imapbox FROM imapboxes
         ''').fetchall()) == 1
 
-        self.Manager.newbox(user='banana', box='INBOX')
+        self.Manager.new_box(user='banana', box='INBOX')
 
         assert self.Manager.user == 'banana'
         assert self.Manager.imapbox == 'INBOX'
@@ -83,7 +82,7 @@ class TestStatsMan():
             SELECT user, imapbox FROM imapboxes
         ''').fetchall()) == 2
 
-        self.Manager.newbox(user='banana', box='Sent')
+        self.Manager.new_box(user='banana', box='Sent')
 
         assert self.Manager.user == 'banana'
         assert self.Manager.imapbox == 'Sent'
@@ -92,14 +91,13 @@ class TestStatsMan():
         ''').fetchall()) == 3
 
         # Back to the start
-        self.Manager.newbox(user='username', box='INBOX')
+        self.Manager.new_box(user='username', box='INBOX')
 
         assert self.Manager.user == 'username'
         assert self.Manager.imapbox == 'INBOX'
         assert len(self.Manager.cur.execute('''
             SELECT user, imapbox FROM imapboxes
         ''').fetchall()) == 3
-
 
     def test_add_without_box(self):
         self.Manager = archivemymail.StatsMan.StatsManClass()
@@ -113,13 +111,13 @@ class TestStatsMan():
         # That failed, but if we register a user first,
         # we should be able to auto-add a box to that user
 
-        self.Manager.newbox(user='user', box='INBOX')
+        self.Manager.new_box(user='user', box='INBOX')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
         self.Manager.add(message=test_message1, mbox='test')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
-        
+
     def test_text_header(self):
         test_data = [
             ["", None, "\n"],
@@ -140,20 +138,21 @@ class TestStatsMan():
             def __init__(self, args, stdin=None):
                 assert len(args) == 3
                 assert stdin == subprocess.PIPE
+
             def communicate(self, str):
                 assert 'Subject: archivemymail' in str
+
         monkeypatch.setattr(subprocess, 'Popen', Pope)
 
-
         self.Manager = archivemymail.StatsMan.StatsManClass()
-        self.Manager.newbox(user='tom', box='INBOX')
+        self.Manager.new_box(user='tom', box='INBOX')
         self.Manager.add(mbox='INBOX.bz2', message=test_message1)
         self.Manager.add(mbox='INBOX.bz2', message=test_message1)
         self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
-        self.Manager.newbox(user='bill', box='INBOX')
+        self.Manager.new_box(user='bill', box='INBOX')
         self.Manager.add(mbox='INBOX.bz2', message=test_message1)
         self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
-        self.Manager.newbox(user='bill', box='Sent')
+        self.Manager.new_box(user='bill', box='Sent')
         self.Manager.add(mbox='Sent.bz2', message=test_message2)
         self.Manager.add(mbox='Sent.bz2', message=test_message2)
         self.Manager.summarise()
