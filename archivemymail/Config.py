@@ -61,7 +61,7 @@ class Config(collections.MutableMapping):
                             help="account to archive (can be specified multiple times)",
                             metavar="USER:PASSWORD")
 
-        args = parser.parse_args()
+        args, unknowns = parser.parse_known_args()
 
         # Consolidate the options
         self['dry_run'] = args.dry_run

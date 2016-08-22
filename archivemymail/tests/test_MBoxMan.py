@@ -199,8 +199,38 @@ class TestMboxMan:
         assert '98127@example.org' in self.manager.msgids
         assert '12345@example.com' in self.manager.msgids
 
+    def test_set_box(self, monkeypatch):
+        def myclose(self):
+            pass
+        def myopen(self, path):
+            assert path.endswith('_box.mbox')
+            self.currentbox = archivemymail.MBoxMan.NullBox(path)
+        def mynewbox(self, user, path):
+            assert path.endswith('_box.mbox')
+            assert user == 'user'
+        monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.close', myclose)
+        monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.open', myopen)
+        monkeypatch.setattr('archivemymail.StatsMan.StatsManClass.new_box', mynewbox)
+
+        # Test when no box is open
+        self.manager.currentbox = None
+        result = self.manager.set_box(path='another_box.mbox', spambox=False)
+        assert result.path == 'another_box.mbox'
+        assert self.manager.spambox == False
+
+        # Test when re-opening the box
+        result = self.manager.set_box(path='another_box.mbox', spambox=False)
+        assert result.path == 'another_box.mbox'
+        assert self.manager.spambox == False
+
+        # Test when changing box
+        result = self.manager.set_box(path='a_box.mbox', spambox=False)
+        assert result.path == 'a_box.mbox'
+        assert self.manager.spambox == False
+        
     def test_close(self, monkeypatch):
         self.manager.open('pytest.mbox')
+        assert self.manager.currentbox is not None
 
         def do_nothing():
             pass
