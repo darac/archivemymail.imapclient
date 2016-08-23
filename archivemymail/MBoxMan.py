@@ -7,6 +7,27 @@ import subprocess
 
 import archivemymail
 
+try:
+        FileNotFoundError
+except NameError:
+        FileNotFoundError = IOError
+        FileExistsError = IOError
+
+def _runprocess(cmd):
+    try:
+        ret = subprocess.run(cmd)
+    except AttributeError:
+        ret = subprocess.Popen(cmd).communicate()
+    return ret
+
+def _checkprocess(obj):
+    if obj is None:
+        return
+    try:
+        obj.check_returncode()
+    except AttributeError:
+        if obj.returncode:
+            raise subprocess.CalledProcessError(obj.returncode, obj.args)
 
 class NullBox:
     def __init__(self, path):
@@ -57,19 +78,6 @@ class MBoxManClass:
 
     @staticmethod
     def _decompress(fullpath):
-        def run(cmd):
-            try:
-                ret = subprocess.run(cmd)
-            except AttributeError:
-                ret = subprocess.Popen(cmd).communicate()
-            return ret
-
-        def check(obj):
-            try:
-                obj.check_returncode()
-            except AttributeError:
-                if obj.returncode:
-                    raise subprocess.CalledProcessError(obj.returncode, obj.args)
 
         ret = None
         if os.path.exists(fullpath):
@@ -77,30 +85,23 @@ class MBoxManClass:
             return
         elif os.path.exists(fullpath + '.gz'):
             logging.debug('GZip decompressing...')
-            ret = run(['gzip', '-d', fullpath + '.gz'])
+            ret = _runprocess(['gzip', '-d', fullpath + '.gz'])
         elif os.path.exists(fullpath + '.bz2'):
             logging.debug('BZip decompressing...')
-            ret = run(['bzip2', '-d', fullpath + '.bz2'])
+            ret = _runprocess(['bzip2', '-d', fullpath + '.bz2'])
         elif os.path.exists(fullpath + '.xz'):
             logging.debug('XZip decompressing...')
-            ret = run(['xz', '-d', fullpath + '.xz'])
+            ret = _runprocess(['xz', '-d', fullpath + '.xz'])
         elif os.path.exists(fullpath + '.lz4'):
             logging.debug('LZip decompressing...')
-            ret = run(['lzop', '-d', fullpath + '.lz4'])
+            ret = _runprocess(['lzop', '-d', fullpath + '.lz4'])
         if ret is not None:
-            check(ret)
+            _checkprocess(ret)
 
     @staticmethod
     def _compress(fullpath, compression):
-        def run(cmd):
-            try:
-                ret = subprocess.run(cmd)
-            except AttributeError:
-                ret = subprocess.Popen(cmd).communicate()
-            return ret
-
         if not os.path.exists(fullpath):
-            return FileNotFoundError
+            raise FileNotFoundError
         compressor = None
         extension = None
         if compression == 'gz' or compression == 'gzip':
@@ -120,10 +121,10 @@ class MBoxManClass:
             return
 
         if os.path.exists(fullpath + '.' + extension):
-            return FileExistsError
+            raise FileExistsError
 
         logging.debug('Compressing {f} -> {f}.{e}'.format(f=fullpath, e=extension))
-        run([compressor, '-9', fullpath])
+        _runprocess([compressor, '-9', fullpath])
 
     def set_box(self, path, spambox=False):
         if self.currentbox is not None:
@@ -131,9 +132,7 @@ class MBoxManClass:
                 # Change of box
                 self.close()
                 self.open(path)
-            else:
-                # Setting to the current box; nothing to do
-                pass
+            # ELSE Setting to the current box; nothing to do
         else:
             # New box
             self.open(path)
@@ -144,7 +143,8 @@ class MBoxManClass:
     def open(self, path):
         self.boxpath = path
         fullpath = os.path.join(self.boxroot, self.boxpath)
-        if not os.path.exists(os.path.dirname(fullpath)) and not self.dryrun:
+        if not os.path.exists(os.path.dirname(fullpath)) and \
+           not self.dryrun:
             # Create the target directory, if necessary
             os.makedirs(os.path.dirname(fullpath))
 
@@ -188,12 +188,12 @@ class MBoxManClass:
             logging.info('Would learn %s mbox: %s', spamham, self.boxpath)
         else:
             logging.info('Learning %s mbox: %s', spamham, self.boxpath)
-            ret = subprocess.run(['sa-learn',
-                                  '--%s'.format(spamham),
-                                  '--no-sync,'
-                                  '--dbpath', archivemymail.config.bayes_dir,
-                                  '--mbox', os.path.join(self.boxroot, self.boxpath)])
-            ret.check_returncode()
+            ret = _runprocess(['sa-learn',
+                                '--{}'.format(spamham),
+                                '--no-sync',
+                                '--dbpath', archivemymail.config.bayes_dir,
+                                '--mbox', os.path.join(self.boxroot, self.boxpath)])
+            _checkprocess(ret)
 
     def close(self):
         if self.currentbox is None:
