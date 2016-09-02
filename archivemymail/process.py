@@ -3,7 +3,7 @@
 import logging
 from collections import deque
 
-from imapclient import IMAPClient
+import imapclient
 
 import archivemymail
 
@@ -14,7 +14,7 @@ def process(account):
     # Start by logging in
     logging.info("")
     logging.info("Archiving mail for %s", user)
-    archivemymail.server = IMAPClient(archivemymail.config.server, ssl=True)
+    archivemymail.server = imapclient.IMAPClient(archivemymail.config.server, ssl=True)
     archivemymail.server.login(user, password)
 
     mboxes = deque(archivemymail.server.list_folders())
