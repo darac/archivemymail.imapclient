@@ -10,7 +10,7 @@ import subprocess
 import imapclient
 
 import archivemymail
-from Progress import Progress
+from .Progress import Progress
 
 
 def archivebox(mbox, user):
