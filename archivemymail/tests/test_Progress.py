@@ -7,6 +7,9 @@ import archivemymail
 test_message1 = email.message.Message()
 test_message1['Subject'] = "Test subject"
 
+test_message2 = email.message.Message()
+test_message2['Subject'] = u"☺"
+
 class TestProgress:
 
     @pytest.mark.parametrize("total,isatty,width", [
@@ -36,9 +39,13 @@ class TestProgress:
         assert p.num == 0
 
     def test_log(self, monkeypatch, caplog):
-        def myparse(msg, right=None, Left=None):
+        def myparse(msg, right=None, left=None):
             assert right == 50
             return "Test subject"
+
+        def badparse(msg, right=None, left=None):
+            assert right == 50
+            raise TypeError
             
         p = archivemymail.Progress(5)
 
@@ -55,3 +62,15 @@ class TestProgress:
 
         assert p.num == 3
         assert u"[SPAM] Test subject                                       → bar" in caplog.text
+
+        p.field_width=2
+        p.log(message=test_message1, box="foo", is_spam=False)
+
+        assert p.num == 4
+        assert u"( 4/ 5) [HAM ] Test subject                                       → foo" in caplog.text
+
+        monkeypatch.setattr("archivemymail.parse_header", badparse)
+        p.log(message=test_message2, box="foo", is_spam=False)
+
+        assert p.num == 5
+        assert u"( 5/ 5) [HAM ] <No Subject>                                       → foo" in caplog.text

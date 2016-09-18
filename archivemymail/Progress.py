@@ -23,12 +23,12 @@ class Progress:
         else:
             progress = ''
 
-        subject = archivemymail.parse_header(message['Subject'], right=50)
         if is_spam:
             spamham = "[SPAM]"
         else:
             spamham = "[HAM ]"
         try:
+            subject = archivemymail.parse_header(message['Subject'], right=50)
             line = "{progress}{spamham} {subject:50} → {box}".format(subject=subject, box=box, spamham=spamham,
                                                                       progress=progress)
         except TypeError:
