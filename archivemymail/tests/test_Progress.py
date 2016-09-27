@@ -74,3 +74,25 @@ class TestProgress:
 
         assert p.num == 5
         assert u"( 5/ 5) [HAM ] <No Subject>                                       → foo" in caplog.text
+
+    def test_learnlog(self, monkeypatch, caplog):
+        def myparse(msg, right=None, left=None):
+            assert right == 50
+            return "Test subject"
+
+        p = archivemymail.Progress(5, learning=True)
+
+        p.field_width = None
+        p.num = 1
+        monkeypatch.setattr("archivemymail.parse_header", myparse)
+
+        p.log(message=test_message1, box="foo", is_spam=False)
+
+        assert p.num == 2
+        assert u"[Learn-HAM ] Test subject                                       → foo" in caplog.text
+
+        p.log(message=test_message1, box="bar", is_spam=True)
+
+        assert p.num == 3
+        assert u"[Learn-SPAM] Test subject                                       → bar" in caplog.text
+

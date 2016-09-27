@@ -117,7 +117,7 @@ class TestMboxMan:
                 def check_returncode(self):
                     pass
 
-            def myrun(fullpath):
+            def myrun(fullpath, stdin=None, input=None, check=False):
                 if program == 'invalid':
                     return myretclass()
                 assert fullpath == [program, '-d', path + '.' + extension]
@@ -175,7 +175,7 @@ class TestMboxMan:
         ('exists', None, 'gz'),
     ])
     def test_compress(self, monkeypatch, caplog, compression, compressor, extension):
-        def myrun(fullpath):
+        def myrun(fullpath, stdin=None, input=None, check=False):
             assert fullpath == [compressor, '-9', path]
 
         class Pope():
@@ -359,7 +359,7 @@ class TestMboxMan:
         self.manager.spambox = spambox
         self.manager.dryrun = dryrun
 
-        def myrun(fullpath):
+        def myrun(fullpath, stdin=None, input=None, check=False):
             assert 'sa-learn' in fullpath
             assert '--no-sync' in fullpath
             assert '--dbpath' in fullpath

@@ -3,31 +3,15 @@
 import logging
 import mailbox
 import os
-import subprocess
 
 import archivemymail
+import archivemymail.wrappers
 
 try:
         FileNotFoundError
 except NameError:
         FileNotFoundError = IOError
         FileExistsError = IOError
-
-def _runprocess(cmd):
-    try:
-        ret = subprocess.run(cmd)
-    except AttributeError:
-        ret = subprocess.Popen(cmd).communicate()
-    return ret
-
-def _checkprocess(obj):
-    if obj is None:
-        return
-    try:
-        obj.check_returncode()
-    except AttributeError:
-        if obj.returncode:
-            raise subprocess.CalledProcessError(obj.returncode, obj.args)
 
 class NullBox:
     def __init__(self, path):
@@ -85,18 +69,18 @@ class MBoxManClass:
             return
         elif os.path.exists(fullpath + '.gz'):
             logging.debug('GZip decompressing...')
-            ret = _runprocess(['gzip', '-d', fullpath + '.gz'])
+            ret = archivemymail.wrappers.subprocess(['gzip', '-d', fullpath + '.gz'])
         elif os.path.exists(fullpath + '.bz2'):
             logging.debug('BZip decompressing...')
-            ret = _runprocess(['bzip2', '-d', fullpath + '.bz2'])
+            ret = archivemymail.wrappers.subprocess(['bzip2', '-d', fullpath + '.bz2'])
         elif os.path.exists(fullpath + '.xz'):
             logging.debug('XZip decompressing...')
-            ret = _runprocess(['xz', '-d', fullpath + '.xz'])
+            ret = archivemymail.wrappers.subprocess(['xz', '-d', fullpath + '.xz'])
         elif os.path.exists(fullpath + '.lz4'):
             logging.debug('LZip decompressing...')
-            ret = _runprocess(['lzop', '-d', fullpath + '.lz4'])
+            ret = archivemymail.wrappers.subprocess(['lzop', '-d', fullpath + '.lz4'])
         if ret is not None:
-            _checkprocess(ret)
+            ret.check()
 
     @staticmethod
     def _compress(fullpath, compression):
@@ -124,7 +108,7 @@ class MBoxManClass:
             raise FileExistsError
 
         logging.debug('Compressing {f} -> {f}.{e}'.format(f=fullpath, e=extension))
-        _runprocess([compressor, '-9', fullpath])
+        archivemymail.wrappers.subprocess([compressor, '-9', fullpath])
 
     def set_box(self, path, spambox=False):
         if self.currentbox is not None:
@@ -188,12 +172,12 @@ class MBoxManClass:
             logging.info('Would learn %s mbox: %s', spamham, self.boxpath)
         else:
             logging.info('Learning %s mbox: %s', spamham, self.boxpath)
-            ret = _runprocess(['sa-learn',
-                                '--{}'.format(spamham),
-                                '--no-sync',
-                                '--dbpath', archivemymail.config.bayes_dir,
-                                '--mbox', os.path.join(self.boxroot, self.boxpath)])
-            _checkprocess(ret)
+            ret = archivemymail.wrappers.subprocess(['sa-learn',
+                                      '--{}'.format(spamham),
+                                      '--no-sync',
+                                      '--dbpath', archivemymail.config.bayes_dir,
+                                      '--mbox', os.path.join(self.boxroot, self.boxpath)])
+            ret.check()
 
     def close(self):
         if self.currentbox is None:

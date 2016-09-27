@@ -133,6 +133,4 @@ class StatsManClass:
         text = textstream.render('text')
         msg.attach(MIMEText(html, 'html', 'utf-8'))
         msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        p = subprocess.Popen(["/usr/sbin/sendmail", "-t", "-oi"],
-                             stdin=subprocess.PIPE)
-        p.communicate(msg.as_string())
+        p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())

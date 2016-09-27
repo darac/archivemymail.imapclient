@@ -10,7 +10,6 @@ import subprocess
 import imapclient
 
 import archivemymail
-from .Progress import Progress
 
 
 def archivebox(mbox, user):
@@ -45,7 +44,7 @@ def archivebox(mbox, user):
                                                   archivemymail.statsman,
                                                   archivemymail.config.dry_run,
                                                   archivemymail.config.compression)
-    progress = Progress(len(msg_list))
+    progress = archivemymail.progress.Progress(len(msg_list))
 
     logging.debug("%d messages to archive", len(msg_list))
     for msg_num in msg_list:
