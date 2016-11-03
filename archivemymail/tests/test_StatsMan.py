@@ -5,19 +5,8 @@ import subprocess
 import pytest
 
 import archivemymail
+import testdata as td
 
-test_message1 = email.message.Message()
-test_message1['Subject'] = 'Test subject'
-test_message1['From'] = 'test@example.com'
-test_message1['To'] = 'recip@example.com'
-test_message1['Date'] = '01-Jan-2010'
-test_message1.set_payload('This is a test message\n')
-
-test_message2 = email.message.Message()
-test_message2['Subject'] = "GewSt:=?UTF-8?B?IFdlZ2ZhbGwgZGVyIFZvcmzDpHVmaWdrZWl0?="
-test_message2['From'] = 'John Doe <j@example.org>'
-test_message2['To'] = 'bill@example.org'
-test_message2.set_payload("Another test\n")
 
 
 class TestStatsMan():
@@ -104,7 +93,7 @@ class TestStatsMan():
         assert self.Manager.imapbox is None
         assert self.Manager.user is None
         with pytest.raises(RuntimeError):
-            self.Manager.add(message=test_message1, mbox='test')
+            self.Manager.add(message=td.test_message1, mbox='test')
         assert self.Manager.user is None
         assert self.Manager.imapbox != 'test'
 
@@ -114,7 +103,7 @@ class TestStatsMan():
         self.Manager.new_box(user='user', box='INBOX')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
-        self.Manager.add(message=test_message1, mbox='test')
+        self.Manager.add(message=td.test_message1, mbox='test')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
 
@@ -146,13 +135,13 @@ class TestStatsMan():
 
         self.Manager = archivemymail.StatsMan.StatsManClass()
         self.Manager.new_box(user='tom', box='INBOX')
-        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
-        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
-        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=td.test_message1)
         self.Manager.new_box(user='bill', box='INBOX')
-        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
-        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=td.test_message1)
         self.Manager.new_box(user='bill', box='Sent')
-        self.Manager.add(mbox='Sent.bz2', message=test_message2)
-        self.Manager.add(mbox='Sent.bz2', message=test_message2)
+        self.Manager.add(mbox='Sent.bz2', message=td.test_message2)
+        self.Manager.add(mbox='Sent.bz2', message=td.test_message2)
         self.Manager.summarise()

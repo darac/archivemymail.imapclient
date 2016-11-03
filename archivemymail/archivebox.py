@@ -13,7 +13,9 @@ import archivemymail
 
 
 def archivebox(mbox, user):
-    disposition = 0
+    disposition = \
+        {'have_archived' : False,
+         'mbox_deleted': False}
 
     (flags, delimiter, mbox_name) = mbox
 
@@ -48,7 +50,7 @@ def archivebox(mbox, user):
 
     logging.debug("%d messages to archive", len(msg_list))
     for msg_num in msg_list:
-        disposition &= archivemymail.HAVE_ARCHIVED
+        disposition['have_archived'] = True
         imapmessage = archivemymail.server.fetch(msg_num, ['FLAGS', 'RFC822', 'INTERNALDATE'])[msg_num]
         mboxflags = ''
         if imapclient.RECENT in imapmessage['FLAGS']:
@@ -64,7 +66,10 @@ def archivebox(mbox, user):
         logging.debug(' + Flags: %s', mboxflags)
 
         # Get the body of the message
-        fp = email.parser.BytesFeedParser()
+        try:
+            fp = email.parser.BytesFeedParser()
+        except AttributeError:
+            fp = email.parser.FeedParser()
         fp.feed(imapmessage['RFC822'])
         message = mailbox.mboxMessage(fp.close())
         message.set_flags(mboxflags)
@@ -75,20 +80,22 @@ def archivebox(mbox, user):
                                                                     year=imapmessage['INTERNALDATE'].year,
                                                                     month=imapmessage['INTERNALDATE'].month))
         logging.debug(" + File is %s.%s", boxname, archivemymail.config.compression)
-        archivemymail.mboxman.set_box(boxname, mbox_name.lower().find('spam') == -1)
+        archivemymail.mboxman.set_box(boxname, mbox_name.lower().find('spam') != -1)
 
         # Log Progress
-        progress.log(message, boxname, boxname.lower().find('spam') == 1)
+        progress.log(message, boxname, boxname.lower().find('spam') != -1)
 
         # Pass the message through SpamAssassin
         if archivemymail.config.do_learning and not archivemymail.config.dry_run:
-            subprocess.run(['sa-learn', '--spam', '--no-sync',
+            archivemymail.wrappers.subprocess(
+            ['sa-learn', '--spam', '--no-sync',
                             '--dbpath', archivemymail.config.bayes_dir],
-                           input=message.as_string()).check_returncode()
+                           input=message.as_string(), check=True)
         elif not archivemymail.config.dry_run:
-            subprocess.run(['sa-learn', '--ham', '--no-sync',
+            archivemymail.wrappers.subprocess(
+            ['sa-learn', '--ham', '--no-sync',
                             '--dbpath', archivemymail.config.bayes_dir],
-                           input=message.as_string()).check_returncode()
+                           input=message.as_string(), check=True)
 
         # Add the message to the mbox
         archivemymail.mboxman.add(message)
@@ -107,7 +114,7 @@ def archivebox(mbox, user):
                                  'queue'):
         msg_list = archivemymail.server.search(['NOT', 'DELETED'])
         if len(msg_list) <= 0:
-            disposition &= archivemymail.MBOX_DELETED
+            disposition['mbox_deleted'] = True
             if archivemymail.config.dry_run:
                 logging.info("Would delete now-empty folder %s", mbox_name)
             else:
