@@ -68,9 +68,10 @@ def archivebox(mbox, user):
         # Get the body of the message
         try:
             fp = email.parser.BytesFeedParser()
+            fp.feed(imapmessage['RFC822'])
         except AttributeError:
             fp = email.parser.FeedParser()
-        fp.feed(imapmessage['RFC822'])
+            fp.feed(imapmessage['RFC822'])
         message = mailbox.mboxMessage(fp.close())
         message.set_flags(mboxflags)
 
