@@ -13,10 +13,6 @@ from .process import process
 
 __version__ = 0.1
 
-# Flags
-HAVE_ARCHIVED = 1
-MBOX_DELETED = 2
-
 config = Config()
 statsman = StatsManClass()
 mboxman = None

@@ -21,7 +21,7 @@ def process(account):
     while len(mboxes):
         mbox = mboxes.popleft()
         disposition = archivemymail.archivebox(mbox, user)
-        if disposition & archivemymail.HAVE_ARCHIVED \
-                and not disposition & archivemymail.MBOX_DELETED \
+        if disposition['have_archived'] \
+                and not disposition['mbox_deleted'] \
                 and archivemymail.config.do_learning:
             archivemymail.learnbox(mbox)

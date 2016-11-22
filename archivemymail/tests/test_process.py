@@ -17,19 +17,23 @@ class myIMAPClient():
 
 def myarchivebox_(mbox, user):
     assert isinstance(mbox, tuple)
-    return 0
+    return {'have_archived': False,
+            'mbox_deleted':  False}
 
 def myarchivebox_A(mbox, user):
     assert isinstance(mbox, tuple)
-    return archivemymail.HAVE_ARCHIVED
+    return {'have_archived': True,
+            'mbox_deleted':  False}
 
 def myarchivebox_D(mbox, user):
     assert isinstance(mbox, tuple)
-    return archivemymail.MBOX_DELETED
+    return {'have_archived': False,
+            'mbox_deleted':  True}
 
 def myarchivebox_AD(mbox, user):
     assert isinstance(mbox, tuple)
-    return archivemymail.HAVE_ARCHIVED | archivemymail.MBOX_DELETED
+    return {'have_archived': True,
+            'mbox_deleted':  True}
 
 def mylearnbox(mbox):
     assert isinstance(mbox, tuple)
