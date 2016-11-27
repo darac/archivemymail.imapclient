@@ -38,7 +38,6 @@ class TestProgress:
         assert p.field_width == width
         assert p.num == 0
 
-    @staticmethod
     def test_log(self, monkeypatch, caplog):
         def myparse(msg, right=None, left=None):
             assert right == 50
@@ -76,8 +75,7 @@ class TestProgress:
         assert p.num == 5
         assert u"( 5/ 5) [HAM ] <No Subject>                                       → foo" in caplog.text
 
-    @staticmethod
-    def test_learnlog(monkeypatch, caplog):
+    def test_learnlog(self, monkeypatch, caplog):
         def myparse(msg, right=None, left=None):
             assert right == 50
             return "Test subject"

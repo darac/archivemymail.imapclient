@@ -15,13 +15,11 @@ except NameError:
 
 
 class TestNullBox:
-    @staticmethod
-    def test_defaults():
+    def test_defaults(self):
         box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         assert box.path == '/tmp/foo.mbox'
 
-    @staticmethod
-    def test_iterations():
+    def test_iterations(self):
         box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         counter = 0
         for b in box:
@@ -29,13 +27,11 @@ class TestNullBox:
             break
         assert counter == 0
 
-    @staticmethod
-    def test_add():
+    def test_add(self):
         box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         box.add("test")
 
-    @staticmethod
-    def test_close():
+    def test_close(self):
         box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         box.close()
 

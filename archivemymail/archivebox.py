@@ -39,11 +39,7 @@ def archivebox(mbox, user):
     logging.info("")
     logging.info("====== %s ======", mbox_name)
 
-    try:
-        archivemymail.server.select_folder(mbox_name)
-    except:
-        print("flags was ", flags)
-        raise
+    archivemymail.server.select_folder(mbox_name)
     msg_list = archivemymail.server.search(['OLD', 'BEFORE', '{:%d-%b-%Y}'.format(archivemymail.archivedate)])
 
     archivemymail.mboxman = archivemymail.MBoxManClass(user,
