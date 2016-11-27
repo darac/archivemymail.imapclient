@@ -5,7 +5,7 @@ import imapclient
 import pytest
 
 import archivemymail
-from .testdata import *
+from testdata import *
 
 
 class mockserver:
@@ -28,6 +28,7 @@ class mockserver:
 
     def fetch(self, num, searchterms):
         assert num >= 0
+        assert num <= self.num_messages
         assert 'FLAGS' in searchterms
         assert 'RFC822' in searchterms
         assert 'INTERNALDATE' in searchterms
@@ -96,8 +97,8 @@ class mocksubprocess:
 
 
 @pytest.mark.parametrize('boxname', [
-    ('Archive',),
-    ('_ARCHIVE',),
+    'Archive',
+    '_ARCHIVE',
 ])
 def test_archivebox_archive(boxname):
     mbox = ([], '/', boxname)
@@ -120,9 +121,9 @@ def test_archivebox_unselectable():
 
 
 @pytest.mark.parametrize('tdir', [
-    ('/bob',),
-    ('~/bob',),
-    ('/home/%u',),
+    '/bob',
+    '~/bob',
+    '/home/%u',
 ])
 def test_archivebox_empty_dryrun(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
@@ -131,8 +132,8 @@ def test_archivebox_empty_dryrun(monkeypatch, caplog, tdir):
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
-    monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
+    monkeypatch.setattr("archivemymail.MBoxManClass", mockmboxman)
+    monkeypatch.setattr("archivemymail.Progress", mockprogress)
     archivemymail.server = mockserver(0)
     archivemymail.config.dry_run = True
     archivemymail.config.compression = "gz"
@@ -147,9 +148,9 @@ def test_archivebox_empty_dryrun(monkeypatch, caplog, tdir):
 
 
 @pytest.mark.parametrize('tdir', [
-    ('/bob',),
-    ('~/bob',),
-    ('/home/%u',),
+    '/bob',
+    '~/bob',
+    '/home/%u',
 ])
 def test_archivebox_empty(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
@@ -158,8 +159,8 @@ def test_archivebox_empty(monkeypatch, caplog, tdir):
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
-    monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
+    monkeypatch.setattr("archivemymail.MBoxManClass", mockmboxman)
+    monkeypatch.setattr("archivemymail.Progress", mockprogress)
     archivemymail.server = mockserver(0)
     archivemymail.config.dry_run = False
     archivemymail.config.compression = "gz"
@@ -174,9 +175,9 @@ def test_archivebox_empty(monkeypatch, caplog, tdir):
 
 
 @pytest.mark.parametrize('tdir', [
-    ('/bob',),
-    ('~/bob',),
-    ('/home/%u',),
+    '/bob',
+    '~/bob',
+    '/home/%u',
 ])
 def test_archivebox_nonempty_dryrun(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
@@ -185,8 +186,8 @@ def test_archivebox_nonempty_dryrun(monkeypatch, caplog, tdir):
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
-    monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
+    monkeypatch.setattr("archivemymail.MBoxManClass", mockmboxman)
+    monkeypatch.setattr("archivemymail.Progress", mockprogress)
     archivemymail.server = mockserver(2)
     archivemymail.config.dry_run = True
     archivemymail.config.compression = "gz"
@@ -201,9 +202,9 @@ def test_archivebox_nonempty_dryrun(monkeypatch, caplog, tdir):
 
 
 @pytest.mark.parametrize('tdir', [
-    ('/bob',),
-    ('~/bob',),
-    ('/home/%u',),
+    '/bob',
+    '~/bob',
+    '/home/%u',
 ])
 def test_archivebox_nonempty_nolearn(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
@@ -212,9 +213,9 @@ def test_archivebox_nonempty_nolearn(monkeypatch, caplog, tdir):
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
-    monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
-    monkeypatch.setattr("archivemymail.wrappers.subprocess", mocksubprocess)
+    monkeypatch.setattr("archivemymail.MBoxManClass", mockmboxman)
+    monkeypatch.setattr("archivemymail.Progress", mockprogress)
+    monkeypatch.setattr("archivemymail.subprocess", mocksubprocess)
     archivemymail.server = mockserver(2)
     archivemymail.config.dry_run = False
     archivemymail.config.compression = "xz"
@@ -230,9 +231,9 @@ def test_archivebox_nonempty_nolearn(monkeypatch, caplog, tdir):
 
 
 @pytest.mark.parametrize('tdir', [
-    ('/bob',),
-    ('~/bob',),
-    ('/home/%u',),
+    '/bob',
+    '~/bob',
+    '/home/%u',
 ])
 def test_archivebox_nonempty_learn(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
@@ -241,9 +242,9 @@ def test_archivebox_nonempty_learn(monkeypatch, caplog, tdir):
     mbox = ([], '/', 'inbox')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
-    monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
-    monkeypatch.setattr("archivemymail.wrappers.subprocess", mocksubprocess)
+    monkeypatch.setattr("archivemymail.MBoxManClass", mockmboxman)
+    monkeypatch.setattr("archivemymail.Progress", mockprogress)
+    monkeypatch.setattr("archivemymail.subprocess", mocksubprocess)
     archivemymail.server = mockserver(2)
     archivemymail.config.dry_run = False
     archivemymail.config.compression = "xz"

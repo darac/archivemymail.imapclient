@@ -1,4 +1,5 @@
 import email
+import mailbox
 
 import archivemymail
 
@@ -7,24 +8,32 @@ test_message1['Subject'] = "test"
 
 
 class imapserver:
-    def __init__(self):
-        pass
+    def __init__(self, num_messages):
+        self.num_messages = num_messages
+        self.curr_message = 0
 
     @staticmethod
     def select_folder(mbox, readonly):
         assert readonly is True
 
-    @staticmethod
-    def search(criteria):
+    def search(self, criteria):
         assert criteria == ['NOT', 'DELETED']
-        return [1, 2, 3]
+        return [i for i in range(self.num_messages)]
 
-    @staticmethod
-    def fetch(messages, data, modifiers=None):
-        assert data == 'RFC822'
-        return {1: {b'RFC822': test_message1},
-                2: {b'RFC822': test_message1},
-                3: {b'RFC822': test_message1}}
+    def fetch(self, num, searchterms, modifiers=None):
+        assert num >= 0
+        assert num <= self.num_messages
+        assert searchterms == 'RFC822'
+        assert modifiers is None
+        msg = {}
+        msg[b'FLAGS'] = ()
+        try:
+            msg[b'RFC822'] = test_message1.as_bytes()
+        except AttributeError:
+            msg['RFC822'] = test_message1.as_string()
+        self.curr_message = num
+
+        return {num: msg}
 
 
 class spamProgress:
@@ -36,7 +45,7 @@ class spamProgress:
     def log(message, box, is_spam):
         assert is_spam is True
         assert box == 'foospam'
-        assert message == test_message1
+        assert isinstance(message, mailbox.mboxMessage)
 
 
 class hamProgress:
@@ -48,7 +57,7 @@ class hamProgress:
     def log(message, box, is_spam):
         assert is_spam is False
         assert box == 'foo'
-        assert message == test_message1
+        assert isinstance(message, mailbox.mboxMessage)
 
 
 class myprocess:
@@ -66,10 +75,10 @@ class myprocess:
 
 
 def test_learnbox(monkeypatch, caplog):
-    archivemymail.server = imapserver()
+    archivemymail.server = imapserver(3)
     archivemymail.config.bayes_dir = "."
-    monkeypatch.setattr('archivemymail.progress.Progress', spamProgress)
-    monkeypatch.setattr('archivemymail.wrappers.subprocess', myprocess)
+    monkeypatch.setattr(archivemymail, 'Progress', spamProgress)
+    monkeypatch.setattr(archivemymail, 'subprocess', myprocess)
 
     archivemymail.config.dry_run = True
     archivemymail.learnbox('foospam')

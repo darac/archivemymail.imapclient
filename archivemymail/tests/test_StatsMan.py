@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 import archivemymail
-from .testdata import *
+from testdata import *
 
 
 class TestStatsMan:
@@ -120,7 +120,7 @@ class TestStatsMan:
             else:
                 assert self.Manager.text_header(t[0], t[1]) == t[2]
 
-    @pytest.mark.parametrize('dry_run', [(True,), (False,)])
+    @pytest.mark.parametrize('dry_run', [True, False])
     def test_summarise(self, monkeypatch, dry_run):
         class Pope:
             def __init__(self, args, stdin=None):
@@ -130,6 +130,10 @@ class TestStatsMan:
             @staticmethod
             def communicate(str):
                 assert b'Subject: archivemymail' in str
+
+            @staticmethod
+            def check_returncode():
+                pass
 
         monkeypatch.setattr(subprocess, 'Popen', Pope)
 

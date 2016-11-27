@@ -28,5 +28,5 @@ def process(account):
     if archivemymail.config.do_learning and not archivemymail.config.dry_run:
         # Spamassassin has been filled with all the messages, but with "--no-sync"
         # So let's sync the database for this user
-        sub = archivemymail.wrappers.subprocess(['sa-learn', '--dbpath', archivemymail.config.bayes_dir, '--sync'],
-                                                check=True)
+        sub = archivemymail.subprocess(['sa-learn', '--dbpath', archivemymail.config.bayes_dir, '--sync'],
+                                       check=True)

@@ -5,6 +5,9 @@ import imaplib
 import logging
 import mailbox
 import sys
+import traceback
+
+import imapclient
 
 import archivemymail
 
@@ -23,13 +26,13 @@ def learnbox(mbox):
 
     for msg_num in msg_list:
         try:
-            imapmessage = archivemymail.server.fetch(msg_num, 'RFC822')[msg_num][b'RFC822']
+            imapmessage = archivemymail.server.fetch(msg_num, 'RFC822')[msg_num]
             try:
                 fp = email.parser.BytesFeedParser()
-                fp.feed(imapmessage)
+                fp.feed(imapmessage[b'RFC822'])
             except AttributeError:
                 fp = email.parser.FeedParser()
-                fp.feed(imapmessage)
+                fp.feed(imapmessage['RFC822'])
             message = mailbox.mboxMessage(fp.close())
 
             p.log(message, mbox, spamham == 'spam')
@@ -50,9 +53,8 @@ def learnbox(mbox):
             logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
             logging.warning("Attempting reconnection")
             archivemymail.server.reconnect()
-        except KeyboardInterrupt:
-            raise
-        except:
-            (exc_type, exc_value, _) = sys.exc_info()
+        except (imapclient.IMAPClient.Error, imaplib.IMAP4.error):
+            (exc_type, exc_value, exc_trace) = sys.exc_info()
             logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
+            [logging.warning("%s", x) for x in traceback.format_tb(exc_trace)]
             logging.warning("Skipping to next message")

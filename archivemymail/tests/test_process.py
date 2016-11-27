@@ -83,11 +83,10 @@ def test_process(caplog, monkeypatch, patch, dry_run, wantlearn):
     archivemymail.config.dry_run = dry_run
     archivemymail.config.bayes_dir = '.'
 
-    monkeypatch.setattr(imapclient, 'IMAPClient', myIMAPClient)
-    monkeypatch.setattr('archivemymail.IMAPMan.IMAPClient', myIMAPClient)
+    monkeypatch.setattr(archivemymail, 'IMAPClient', myIMAPClient)
     monkeypatch.setattr(archivemymail, "archivebox", patch)
     monkeypatch.setattr(archivemymail, "learnbox", mylearnbox)
-    monkeypatch.setattr('archivemymail.wrappers.subprocess', mocksubprocess)
+    monkeypatch.setattr(archivemymail, "subprocess", mocksubprocess)
 
     # UUT
     archivemymail.process(account)
