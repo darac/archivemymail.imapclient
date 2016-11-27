@@ -22,4 +22,4 @@ def test_format_size():
         ]
 
     for t in test_data:
-        assert archivemymail.StatsMan.format_size(t[0]) == t[1]
+        assert archivemymail.format_size(t[0]) == t[1]

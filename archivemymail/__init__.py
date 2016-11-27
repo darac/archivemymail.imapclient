@@ -6,7 +6,7 @@ import email.header
 from .Config import Config
 from .MBoxMan import MBoxManClass, NullBoxClass
 from .progress import Progress
-from .StatsMan import StatsManClass
+from .StatsMan import StatsManClass, format_size
 from .archivebox import archivebox
 from .learnbox import learnbox
 from .process import process

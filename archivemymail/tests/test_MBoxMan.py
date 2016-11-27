@@ -286,9 +286,9 @@ class TestMboxMan:
             assert path.endswith('_box.mbox')
             assert user == 'user'
 
-        monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.close', myclose)
-        monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.open', myopen)
-        monkeypatch.setattr('archivemymail.StatsMan.StatsManClass.new_box', mynewbox)
+        monkeypatch.setattr('archivemymail.MBoxManClass.close', myclose)
+        monkeypatch.setattr('archivemymail.MBoxManClass.open', myopen)
+        monkeypatch.setattr('archivemymail.StatsManClass.new_box', mynewbox)
 
         # Test when no box is open
         self.manager.currentbox = None

@@ -5,7 +5,6 @@ import mailbox
 import os
 
 import archivemymail
-import archivemymail.wrappers
 
 try:
     FileNotFoundError
@@ -70,16 +69,16 @@ class MBoxManClass:
             return
         elif os.path.exists(fullpath + '.gz'):
             logging.debug('GZip decompressing...')
-            ret = archivemymail.wrappers.subprocess(['gzip', '-d', fullpath + '.gz'])
+            ret = archivemymail.subprocess(['gzip', '-d', fullpath + '.gz'])
         elif os.path.exists(fullpath + '.bz2'):
             logging.debug('BZip decompressing...')
-            ret = archivemymail.wrappers.subprocess(['bzip2', '-d', fullpath + '.bz2'])
+            ret = archivemymail.subprocess(['bzip2', '-d', fullpath + '.bz2'])
         elif os.path.exists(fullpath + '.xz'):
             logging.debug('XZip decompressing...')
-            ret = archivemymail.wrappers.subprocess(['xz', '-d', fullpath + '.xz'])
+            ret = archivemymail.subprocess(['xz', '-d', fullpath + '.xz'])
         elif os.path.exists(fullpath + '.lz4'):
             logging.debug('LZip decompressing...')
-            ret = archivemymail.wrappers.subprocess(['lzop', '-d', fullpath + '.lz4'])
+            ret = archivemymail.subprocess(['lzop', '-d', fullpath + '.lz4'])
         if ret is not None:
             ret.check()
 
@@ -107,7 +106,7 @@ class MBoxManClass:
             raise FileExistsError
 
         logging.debug('Compressing {f} -> {f}.{e}'.format(f=fullpath, e=extension))
-        archivemymail.wrappers.subprocess([compressor, '-9', fullpath])
+        archivemymail.subprocess([compressor, '-9', fullpath])
 
     def set_box(self, path, spambox=False):
         if self.currentbox is not None:
@@ -171,11 +170,11 @@ class MBoxManClass:
             logging.info('Would learn %s mbox: %s', spamham, self.boxpath)
         else:
             logging.info('Learning %s mbox: %s', spamham, self.boxpath)
-            ret = archivemymail.wrappers.subprocess(['sa-learn',
-                                                     '--{}'.format(spamham),
-                                                     '--no-sync',
-                                                     '--dbpath', archivemymail.config.bayes_dir,
-                                                     '--mbox', os.path.join(self.boxroot, self.boxpath)])
+            ret = archivemymail.subprocess(['sa-learn',
+                                            '--{}'.format(spamham),
+                                            '--no-sync',
+                                            '--dbpath', archivemymail.config.bayes_dir,
+                                            '--mbox', os.path.join(self.boxroot, self.boxpath)])
             ret.check()
 
     def close(self):

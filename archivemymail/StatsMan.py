@@ -142,8 +142,8 @@ class StatsManClass:
         msg.attach(MIMEText(text, 'plain', 'utf-8'))
         try:
             print("Message size ", len(msg.as_bytes()))
-            p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_bytes())
+            p = archivemymail.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_bytes())
         except AttributeError:
             print("Message size ", len(msg.as_string()))
-            p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())
+            p = archivemymail.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())
         p.check()
