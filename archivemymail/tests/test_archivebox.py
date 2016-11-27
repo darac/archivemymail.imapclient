@@ -15,7 +15,7 @@ class mockserver:
 
     @staticmethod
     def select_folder(box):
-        assert box == 'box' or box == 'inbox'
+        assert box == 'box' or box == 'inbox' or box == 'INBOX'
 
     def search(self, searchterm):
         if 'OLD' in searchterm:
@@ -59,6 +59,14 @@ class mockserver:
     def delete_folder(mbox_name):
         assert mbox_name == 'box'
 
+    @staticmethod
+    def unsubscribe_folder(mbox_name):
+        assert mbox_name == 'box'
+
+    @staticmethod
+    def expunge():
+        assert True
+
 
 class mockmboxman:
     def __init__(self, user, tdir, statsman, dry_run, compression):
@@ -73,6 +81,9 @@ class mockmboxman:
     def add(message):
         assert isinstance(message, mailbox.mboxMessage)
 
+    @staticmethod
+    def close():
+        assert True
 
 class mockprogress:
     def __init__(self, length):

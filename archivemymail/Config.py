@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division,
 
 import argparse
 import os
+import sys
 
 try:
     from builtins import *
@@ -60,6 +61,9 @@ class Config(collections.MutableMapping):
                             default=self.setdefault('accounts', []),
                             help="account to archive (can be specified multiple times)",
                             metavar="USER:PASSWORD")
+        parser.add_argument('--dump-config', dest='dump_config', action='store_true',
+                            default=self.setdefault('dump_config', False),
+                            help="dump configuration to the config file (%s)" % os.path.join(user_config_dir('archivemymail', 'Darac'), 'config.yml'))
 
         args, unknowns = parser.parse_known_args()
 
@@ -78,6 +82,14 @@ class Config(collections.MutableMapping):
         self['server'] = args.server
         self['debug'] = args.debug
         self['accounts'] = args.accounts
+
+        if args.dump_config:
+            fname = os.path.join(user_config_dir('archivemymail', 'Darac'), 'config.yml')
+            os.makedirs(user_config_dir('archivemymail', 'Darac'), exist_ok=True)
+            with open(fname, 'w') as f:
+                yaml.dump(self.__dict__, f)
+            print("Configuration dumped to %s" % fname)
+            sys.exit(0)
 
     # These are the methods required by collections.MutableMapping,
     #  which uses them to synthesize this class as a dict-like object

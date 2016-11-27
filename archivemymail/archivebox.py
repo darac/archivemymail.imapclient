@@ -93,16 +93,17 @@ def archivebox(mbox, user):
                 flatmessage = message.as_string()
 
             # Pass the message through SpamAssassin
-            if archivemymail.config.do_learning and not archivemymail.config.dry_run:
-                archivemymail.subprocess(
-                    ['sa-learn', '--spam', '--no-sync',
-                     '--dbpath', archivemymail.config.bayes_dir],
-                    input=flatmessage, check=True)
-            elif not archivemymail.config.dry_run:
-                archivemymail.subprocess(
-                    ['sa-learn', '--ham', '--no-sync',
-                     '--dbpath', archivemymail.config.bayes_dir],
-                    input=flatmessage, check=True)
+            # Nope. This is done in MBoxMan :)
+#            if archivemymail.config.do_learning and not archivemymail.config.dry_run:
+#                archivemymail.subprocess(
+#                    ['sa-learn', '--spam', '--no-sync',
+#                     '--dbpath', archivemymail.config.bayes_dir],
+#                    input=flatmessage, check=True)
+#            elif not archivemymail.config.dry_run:
+#                archivemymail.subprocess(
+#                    ['sa-learn', '--ham', '--no-sync',
+#                     '--dbpath', archivemymail.config.bayes_dir],
+#                    input=flatmessage, check=True)
 
             # Add the message to the mbox
             archivemymail.mboxman.add(message)
@@ -125,6 +126,8 @@ def archivebox(mbox, user):
             [logging.warning("%s", x) for x in traceback.format_tb(exc_trace)]
             logging.warning("Skipping to next message")
 
+    archivemymail.server.expunge()
+
     # Archived all the necessary messages
     # Delete the folder, too, if there's nothing left
     if mbox_name.lower() not in ('inbox',  # Don't delete the special folders
@@ -133,6 +136,7 @@ def archivebox(mbox, user):
                                  'spam',
                                  'trash',
                                  'learnspam',
+                                 'learn-spam',
                                  'queue'):
         msg_list = archivemymail.server.search(['NOT', 'DELETED'])
         if len(msg_list) <= 0:
@@ -141,8 +145,17 @@ def archivebox(mbox, user):
                 logging.info("Would delete now-empty folder %s", mbox_name)
             else:
                 logging.debug("Deleting now-empty folder %s")
-                archivemymail.server.delete_folder(mbox_name)
+                try:
+                    archivemymail.server.select_folder('INBOX')
+                    archivemymail.server.unsubscribe_folder(mbox_name)
+                    archivemymail.server.delete_folder(mbox_name)
+                except imaplib.IMAP4.abort:
+                    (exc_type, exc_value, _) = sys.exc_info()
+                    logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
+                    logging.warning("Attempting reconnection")
+                    archivemymail.server.reconnect()
 
     archivemymail.server.close_folder()
+    archivemymail.mboxman.close()
 
     return disposition

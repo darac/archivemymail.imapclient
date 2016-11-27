@@ -23,7 +23,9 @@ def process(account):
                 and not disposition['mbox_deleted'] \
                 and archivemymail.config.do_learning:
             # mbox is (flags, delimiter, mbox_name). We just want the name
-            archivemymail.learnbox(mbox[2])
+            # Actually, this SHOULD already be covered by existing filtering
+            #archivemymail.learnbox(mbox[2])
+            pass
 
     if archivemymail.config.do_learning and not archivemymail.config.dry_run:
         # Spamassassin has been filled with all the messages, but with "--no-sync"

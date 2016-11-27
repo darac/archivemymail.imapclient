@@ -1,4 +1,4 @@
-#!env python3
+#!/usr/bin/python3
 
 import logging
 import os
