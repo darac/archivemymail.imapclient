@@ -8,12 +8,13 @@ import archivemymail
 import archivemymail.wrappers
 
 try:
-        FileNotFoundError
+    FileNotFoundError
 except NameError:
-        FileNotFoundError = IOError
-        FileExistsError = IOError
+    FileNotFoundError = IOError
+    FileExistsError = IOError
 
-class NullBox:
+
+class NullBoxClass:
     def __init__(self, path):
         self.path = path
         pass
@@ -86,8 +87,6 @@ class MBoxManClass:
     def _compress(fullpath, compression):
         if not os.path.exists(fullpath):
             raise FileNotFoundError
-        compressor = None
-        extension = None
         if compression == 'gz' or compression == 'gzip':
             compressor = 'gzip'
             extension = 'gz'
@@ -116,7 +115,7 @@ class MBoxManClass:
                 # Change of box
                 self.close()
                 self.open(path)
-            # ELSE Setting to the current box; nothing to do
+                # ELSE Setting to the current box; nothing to do
         else:
             # New box
             self.open(path)
@@ -128,13 +127,13 @@ class MBoxManClass:
         self.boxpath = path
         fullpath = os.path.join(self.boxroot, self.boxpath)
         if not os.path.exists(os.path.dirname(fullpath)) and \
-           not self.dryrun:
+                not self.dryrun:
             # Create the target directory, if necessary
             os.makedirs(os.path.dirname(fullpath))
 
         logging.debug('Opening %s', fullpath)
         if self.dryrun:
-            self.currentbox = NullBox(path)
+            self.currentbox = NullBoxClass(path)
         else:
             self._decompress(fullpath)
             self.currentbox = mailbox.mbox(path)
@@ -173,10 +172,10 @@ class MBoxManClass:
         else:
             logging.info('Learning %s mbox: %s', spamham, self.boxpath)
             ret = archivemymail.wrappers.subprocess(['sa-learn',
-                                      '--{}'.format(spamham),
-                                      '--no-sync',
-                                      '--dbpath', archivemymail.config.bayes_dir,
-                                      '--mbox', os.path.join(self.boxroot, self.boxpath)])
+                                                     '--{}'.format(spamham),
+                                                     '--no-sync',
+                                                     '--dbpath', archivemymail.config.bayes_dir,
+                                                     '--mbox', os.path.join(self.boxroot, self.boxpath)])
             ret.check()
 
     def close(self):

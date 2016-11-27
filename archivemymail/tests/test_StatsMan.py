@@ -1,15 +1,13 @@
-import email.message
 import sqlite3
 import subprocess
 
 import pytest
 
 import archivemymail
-import testdata as td
+from .testdata import *
 
 
-
-class TestStatsMan():
+class TestStatsMan:
     @classmethod
     def setup_class(cls):
         cls.Manager = archivemymail.StatsManClass()
@@ -89,11 +87,11 @@ class TestStatsMan():
         ''').fetchall()) == 3
 
     def test_add_without_box(self):
-        self.Manager = archivemymail.StatsMan.StatsManClass()
+        self.Manager = archivemymail.StatsManClass()
         assert self.Manager.imapbox is None
         assert self.Manager.user is None
         with pytest.raises(RuntimeError):
-            self.Manager.add(message=td.test_message1, mbox='test')
+            self.Manager.add(message=test_message1, mbox='test')
         assert self.Manager.user is None
         assert self.Manager.imapbox != 'test'
 
@@ -103,7 +101,7 @@ class TestStatsMan():
         self.Manager.new_box(user='user', box='INBOX')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
-        self.Manager.add(message=td.test_message1, mbox='test')
+        self.Manager.add(message=test_message1, mbox='test')
         assert self.Manager.user == 'user'
         assert self.Manager.imapbox == 'INBOX'
 
@@ -122,26 +120,30 @@ class TestStatsMan():
             else:
                 assert self.Manager.text_header(t[0], t[1]) == t[2]
 
-    def test_summarise(self, monkeypatch):
-        class Pope():
+    @pytest.mark.parametrize('dry_run', [(True,), (False,)])
+    def test_summarise(self, monkeypatch, dry_run):
+        class Pope:
             def __init__(self, args, stdin=None):
                 assert len(args) == 3
-                #assert stdin == subprocess.PIPE
+                # assert stdin == subprocess.PIPE
 
-            def communicate(self, str):
-                assert 'Subject: archivemymail' in str
+            @staticmethod
+            def communicate(str):
+                assert b'Subject: archivemymail' in str
 
         monkeypatch.setattr(subprocess, 'Popen', Pope)
 
-        self.Manager = archivemymail.StatsMan.StatsManClass()
+        archivemymail.config.dry_run = dry_run
+
+        self.Manager = archivemymail.StatsManClass()
         self.Manager.new_box(user='tom', box='INBOX')
-        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
-        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
-        self.Manager.add(mbox='INBOX2.bz2', message=td.test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
         self.Manager.new_box(user='bill', box='INBOX')
-        self.Manager.add(mbox='INBOX.bz2', message=td.test_message1)
-        self.Manager.add(mbox='INBOX2.bz2', message=td.test_message1)
+        self.Manager.add(mbox='INBOX.bz2', message=test_message1)
+        self.Manager.add(mbox='INBOX2.bz2', message=test_message1)
         self.Manager.new_box(user='bill', box='Sent')
-        self.Manager.add(mbox='Sent.bz2', message=td.test_message2)
-        self.Manager.add(mbox='Sent.bz2', message=td.test_message2)
+        self.Manager.add(mbox='Sent.bz2', message=test_message2)
+        self.Manager.add(mbox='Sent.bz2', message=test_message2)
         self.Manager.summarise()

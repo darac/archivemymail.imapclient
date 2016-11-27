@@ -3,8 +3,6 @@
 import logging
 from collections import deque
 
-import imapclient
-
 import archivemymail
 
 
@@ -12,9 +10,9 @@ def process(account):
     (user, password) = account.split(':', 1)
 
     # Start by logging in
-    logging.info("")
-    logging.info("Archiving mail for %s", user)
-    archivemymail.server = imapclient.IMAPClient(archivemymail.config.server, ssl=True)
+    logging.warning("")
+    logging.warning("Archiving mail for %s", user)
+    archivemymail.server = archivemymail.IMAPClient(archivemymail.config.server, ssl=True)
     archivemymail.server.login(user, password)
 
     mboxes = deque(archivemymail.server.list_folders())
@@ -24,4 +22,11 @@ def process(account):
         if disposition['have_archived'] \
                 and not disposition['mbox_deleted'] \
                 and archivemymail.config.do_learning:
-            archivemymail.learnbox(mbox)
+            # mbox is (flags, delimiter, mbox_name). We just want the name
+            archivemymail.learnbox(mbox[2])
+
+    if archivemymail.config.do_learning and not archivemymail.config.dry_run:
+        # Spamassassin has been filled with all the messages, but with "--no-sync"
+        # So let's sync the database for this user
+        sub = archivemymail.wrappers.subprocess(['sa-learn', '--dbpath', archivemymail.config.bayes_dir, '--sync'],
+                                                check=True)

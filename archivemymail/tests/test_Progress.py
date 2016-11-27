@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf8 :
-import pytest
 import email
+
+import pytest
 
 import archivemymail
 
@@ -10,18 +11,18 @@ test_message1['Subject'] = "Test subject"
 test_message2 = email.message.Message()
 test_message2['Subject'] = u"☺"
 
-class TestProgress:
 
+class TestProgress:
     @pytest.mark.parametrize("total,isatty,width", [
-        (1,   False, None),
-        (10,  False, None),
+        (1, False, None),
+        (10, False, None),
         (100, False, None),
-        (1,   True,  1),
-        (5,   True,  1),
-        (10,  True,  2),
-        (50,  True,  2),
-        (99,  True,  2),
-        (100, True,  3),
+        (1, True, 1),
+        (5, True, 1),
+        (10, True, 2),
+        (50, True, 2),
+        (99, True, 2),
+        (100, True, 3),
     ])
     def test_defaults(self, monkeypatch, total, isatty, width):
         def myisatty(fileno):
@@ -33,11 +34,11 @@ class TestProgress:
         # Call the UUT
         p = archivemymail.Progress(total)
 
-
         assert p.total == total
         assert p.field_width == width
         assert p.num == 0
 
+    @staticmethod
     def test_log(self, monkeypatch, caplog):
         def myparse(msg, right=None, left=None):
             assert right == 50
@@ -46,7 +47,7 @@ class TestProgress:
         def badparse(msg, right=None, left=None):
             assert right == 50
             raise TypeError
-            
+
         p = archivemymail.Progress(5)
 
         p.field_width = None
@@ -63,7 +64,7 @@ class TestProgress:
         assert p.num == 3
         assert u"[SPAM] Test subject                                       → bar" in caplog.text
 
-        p.field_width=2
+        p.field_width = 2
         p.log(message=test_message1, box="foo", is_spam=False)
 
         assert p.num == 4
@@ -75,7 +76,8 @@ class TestProgress:
         assert p.num == 5
         assert u"( 5/ 5) [HAM ] <No Subject>                                       → foo" in caplog.text
 
-    def test_learnlog(self, monkeypatch, caplog):
+    @staticmethod
+    def test_learnlog(monkeypatch, caplog):
         def myparse(msg, right=None, left=None):
             assert right == 50
             return "Test subject"
@@ -95,4 +97,3 @@ class TestProgress:
 
         assert p.num == 3
         assert u"[Learn-SPAM] Test subject                                       → bar" in caplog.text
-

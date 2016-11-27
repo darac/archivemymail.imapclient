@@ -1,5 +1,8 @@
 import subprocess as sp
 
+import imapclient
+
+
 class subprocess:
     def __init__(self, cmd, stdin=None, input=None, check=False):
         try:
@@ -9,11 +12,11 @@ class subprocess:
                 self.obj = sp.run(cmd, stdin=stdin, check=check)
         except AttributeError:
             # Fall back to Python2 semantics
-            print( dir( sp ) )
+            print(dir(sp))
             self.obj = sp.Popen(cmd, stdin=stdin)
             self.obj.communicate(input)
             if check:
-                self.check(obj)
+                self.check()
 
     def check(self):
         if self.obj is None:
@@ -24,3 +27,16 @@ class subprocess:
             if self.obj.returncode:
                 raise sp.CalledProcessError(self.obj.returncode, self.obj.args)
 
+
+class IMAPClient(imapclient.IMAPClient):
+    def reconnect(self):
+        try:
+            self.shutdown()
+        except:
+            pass
+
+        self._imap = self._create_IMAP4()
+        self._imap._mesg = self._log
+        self._idle_tag = None
+
+        self._set_timeout()

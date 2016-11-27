@@ -2,10 +2,11 @@
 # vim: set fileencoding=utf8 :
 
 import email.parser
+import imaplib
 import logging
 import mailbox
 import os
-import subprocess
+import sys
 
 import imapclient
 
@@ -14,7 +15,7 @@ import archivemymail
 
 def archivebox(mbox, user):
     disposition = \
-        {'have_archived' : False,
+        {'have_archived': False,
          'mbox_deleted': False}
 
     (flags, delimiter, mbox_name) = mbox
@@ -25,7 +26,7 @@ def archivebox(mbox, user):
         return disposition
 
     # If a box can't be selected, it can't be archived
-    if b'\NoSelect' in flags:
+    if b'\\Noselect' in flags or b'\\NoSelect' in flags:
         return disposition
 
     tdir = archivemymail.config.target_dir
@@ -38,71 +39,96 @@ def archivebox(mbox, user):
     logging.info("")
     logging.info("====== %s ======", mbox_name)
 
-    archivemymail.server.select_folder(mbox_name)
+    try:
+        archivemymail.server.select_folder(mbox_name)
+    except:
+        print("flags was ", flags)
+        raise
     msg_list = archivemymail.server.search(['OLD', 'BEFORE', '{:%d-%b-%Y}'.format(archivemymail.archivedate)])
 
-    archivemymail.mboxman = archivemymail.mboxman(user,
-                                                  archivemymail.config.target_dir,
-                                                  archivemymail.statsman,
-                                                  archivemymail.config.dry_run,
-                                                  archivemymail.config.compression)
-    progress = archivemymail.progress.Progress(len(msg_list))
+    archivemymail.mboxman = archivemymail.MBoxManClass(user,
+                                                       archivemymail.config.target_dir,
+                                                       archivemymail.statsman,
+                                                       archivemymail.config.dry_run,
+                                                       archivemymail.config.compression)
+    progress = archivemymail.Progress(len(msg_list))
 
     logging.debug("%d messages to archive", len(msg_list))
     for msg_num in msg_list:
-        disposition['have_archived'] = True
-        imapmessage = archivemymail.server.fetch(msg_num, ['FLAGS', 'RFC822', 'INTERNALDATE'])[msg_num]
-        mboxflags = ''
-        if imapclient.RECENT in imapmessage['FLAGS']:
-            mboxflags += 'R'
-        if imapclient.SEEN in imapmessage['FLAGS']:
-            mboxflags += 'O'
-        if imapclient.DELETED in imapmessage['FLAGS']:
-            mboxflags += 'D'
-        if imapclient.FLAGGED in imapmessage['FLAGS']:
-            mboxflags += 'F'
-        if imapclient.ANSWERED in imapmessage['FLAGS']:
-            mboxflags += 'A'
-        logging.debug(' + Flags: %s', mboxflags)
-
-        # Get the body of the message
         try:
-            fp = email.parser.BytesFeedParser()
-            fp.feed(imapmessage['RFC822'])
-        except AttributeError:
-            fp = email.parser.FeedParser()
-            fp.feed(imapmessage['RFC822'])
-        message = mailbox.mboxMessage(fp.close())
-        message.set_flags(mboxflags)
+            imapmessage = archivemymail.server.fetch(msg_num, ['FLAGS', 'RFC822', 'INTERNALDATE'])[msg_num]
+            mboxflags = ''
+            if imapclient.RECENT in imapmessage[b'FLAGS']:
+                mboxflags += 'R'
+            if imapclient.SEEN in imapmessage[b'FLAGS']:
+                mboxflags += 'O'
+            if imapclient.DELETED in imapmessage[b'FLAGS']:
+                mboxflags += 'D'
+            if imapclient.FLAGGED in imapmessage[b'FLAGS']:
+                mboxflags += 'F'
+            if imapclient.ANSWERED in imapmessage[b'FLAGS']:
+                mboxflags += 'A'
+            logging.debug(' + Flags: %s', mboxflags)
 
-        # Use the internal date to determine which file to archive to
-        boxname = os.path.join(tdir,
-                               "{boxpath}/{year}/{month:02}".format(boxpath=mbox_name,
-                                                                    year=imapmessage['INTERNALDATE'].year,
-                                                                    month=imapmessage['INTERNALDATE'].month))
-        logging.debug(" + File is %s.%s", boxname, archivemymail.config.compression)
-        archivemymail.mboxman.set_box(boxname, mbox_name.lower().find('spam') != -1)
+            # Get the body of the message
+            try:
+                fp = email.parser.BytesFeedParser()
+                fp.feed(imapmessage[b'RFC822'])
+            except AttributeError:
+                fp = email.parser.FeedParser()
+                fp.feed(imapmessage['RFC822'])
+            message = mailbox.mboxMessage(fp.close())
+            message.set_flags(mboxflags)
 
-        # Log Progress
-        progress.log(message, boxname, boxname.lower().find('spam') != -1)
+            # Use the internal date to determine which file to archive to
+            boxname = os.path.join(tdir,
+                                   "{boxpath}/{year}/{month:02}".format(boxpath=mbox_name,
+                                                                        year=imapmessage[b'INTERNALDATE'].year,
+                                                                        month=imapmessage[b'INTERNALDATE'].month))
+            logging.debug(" + File is %s.%s", boxname, archivemymail.config.compression)
+            archivemymail.mboxman.set_box(boxname, mbox_name.lower().find('spam') != -1)
 
-        # Pass the message through SpamAssassin
-        if archivemymail.config.do_learning and not archivemymail.config.dry_run:
-            archivemymail.wrappers.subprocess(
-            ['sa-learn', '--spam', '--no-sync',
-                            '--dbpath', archivemymail.config.bayes_dir],
-                           input=message.as_string(), check=True)
-        elif not archivemymail.config.dry_run:
-            archivemymail.wrappers.subprocess(
-            ['sa-learn', '--ham', '--no-sync',
-                            '--dbpath', archivemymail.config.bayes_dir],
-                           input=message.as_string(), check=True)
+            # Log Progress
+            progress.log(message, boxname, boxname.lower().find('spam') != -1)
 
-        # Add the message to the mbox
-        archivemymail.mboxman.add(message)
+            try:
+                flatmessage = message.as_bytes()
+            except AttributeError:
+                flatmessage = message.as_string()
 
-        # And remove it from the mailbox
-        archivemymail.server.delete_messages(msg_num)
+            # Pass the message through SpamAssassin
+            if archivemymail.config.do_learning and not archivemymail.config.dry_run:
+                archivemymail.subprocess(
+                    ['sa-learn', '--spam', '--no-sync',
+                     '--dbpath', archivemymail.config.bayes_dir],
+                    input=flatmessage, check=True)
+            elif not archivemymail.config.dry_run:
+                archivemymail.subprocess(
+                    ['sa-learn', '--ham', '--no-sync',
+                     '--dbpath', archivemymail.config.bayes_dir],
+                    input=flatmessage, check=True)
+
+            # Add the message to the mbox
+            archivemymail.mboxman.add(message)
+
+            # And remove it from the mailbox
+            if not archivemymail.config.dry_run:
+                archivemymail.server.delete_messages(msg_num)
+            else:
+                logging.debug(" + Not deleting in dry-run")
+
+            disposition['have_archived'] = True
+        except imaplib.IMAP4.abort:
+            (exc_type, exc_value, _) = sys.exc_info()
+            logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
+            logging.warning("Attempting reconnection")
+            archivemymail.server.reconnect()
+        except KeyboardInterrupt:
+            raise
+        except:
+            (exc_type, exc_value, _) = sys.exc_info()
+            logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
+            logging.warning("Skipping to next message")
 
     # Archived all the necessary messages
     # Delete the folder, too, if there's nothing left

@@ -1,6 +1,0 @@
-#!env python3
-
-import archivemymail
-
-for account in archivemymail.config.accounts:
-    archivemymail.process(account)

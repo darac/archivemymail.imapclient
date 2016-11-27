@@ -8,30 +8,35 @@ import pytest
 import archivemymail
 
 try:
-        FileNotFoundError
+    FileNotFoundError
 except NameError:
-        FileNotFoundError = IOError
-        FileExistsError = IOError
+    FileNotFoundError = IOError
+    FileExistsError = IOError
+
 
 class TestNullBox:
-    def test_defaults(self):
-        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+    @staticmethod
+    def test_defaults():
+        box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         assert box.path == '/tmp/foo.mbox'
 
-    def test_iterations(self):
-        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+    @staticmethod
+    def test_iterations():
+        box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         counter = 0
         for b in box:
             counter += 1
             break
         assert counter == 0
 
-    def test_add(self):
-        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+    @staticmethod
+    def test_add():
+        box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         box.add("test")
 
-    def test_close(self):
-        box = archivemymail.MBoxMan.NullBox('/tmp/foo.mbox')
+    @staticmethod
+    def test_close():
+        box = archivemymail.NullBoxClass('/tmp/foo.mbox')
         box.close()
 
 
@@ -66,8 +71,8 @@ def mbox_file(tmpdir_factory):
 class TestMboxMan:
     @classmethod
     def setup(cls):
-        cls.statsman = archivemymail.StatsMan.StatsManClass()
-        cls.manager = archivemymail.MBoxMan.MBoxManClass(
+        cls.statsman = archivemymail.StatsManClass()
+        cls.manager = archivemymail.MBoxManClass(
             user='user@example.org',
             boxroot='/tmp',
             statsman=cls.statsman,
@@ -79,7 +84,7 @@ class TestMboxMan:
         assert self.manager.user == 'user'
         assert self.manager.boxroot == '/tmp'
         assert self.manager.statsman == self.statsman
-        assert self.manager.dryrun == True
+        assert self.manager.dryrun is True
         assert self.manager.compression == 'gz'
         assert self.manager.currentbox is None
         assert self.manager.boxpath is None
@@ -94,7 +99,7 @@ class TestMboxMan:
 
         self.manager.open('boxname')
         assert self.manager.boxpath == 'boxname'
-        assert isinstance(self.manager.currentbox, archivemymail.MBoxMan.NullBox)
+        assert isinstance(self.manager.currentbox, archivemymail.NullBoxClass)
         assert self.manager.currentbox.path == 'boxname'
         assert self.manager.msgids == []
 
@@ -122,19 +127,21 @@ class TestMboxMan:
                     return myretclass()
                 assert fullpath == [program, '-d', path + '.' + extension]
 
-            class Pope():
+            class Pope:
                 def __init__(self, args, stdin=None, stdout=None):
                     if program != 'invalid':
                         assert args == [program, '-d', path + '.' + extension]
                     assert stdin is None
                     assert stdout is None
 
-                def communicate(self, string=None):
+                @staticmethod
+                def communicate(string=None):
                     assert string is None
                     if program == 'invalid':
                         return myretclass()
 
-                def check_returncode(self):
+                @staticmethod
+                def check_returncode():
                     return 0
 
             if extension == 'exists':
@@ -178,15 +185,17 @@ class TestMboxMan:
         def myrun(fullpath, stdin=None, input=None, check=False):
             assert fullpath == [compressor, '-9', path]
 
-        class Pope():
+        class Pope:
             def __init__(self, args, stdin=None, stdout=None):
                 assert args == [compressor, '-9', path]
                 assert stdin is None
                 assert stdout is None
 
+            @staticmethod
             def communicate(self, string=None):
                 assert string is None
 
+            @staticmethod
             def check_returncode(self):
                 return 0
 
@@ -267,13 +276,16 @@ class TestMboxMan:
     def test_set_box(self, monkeypatch):
         def myclose(self):
             pass
+
         def myopen(self, path):
             assert path.endswith('_box.mbox')
-            self.currentbox = archivemymail.MBoxMan.NullBox(path)
+            self.currentbox = archivemymail.NullBoxClass(path)
             self.boxpath = path
+
         def mynewbox(self, user, path):
             assert path.endswith('_box.mbox')
             assert user == 'user'
+
         monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.close', myclose)
         monkeypatch.setattr('archivemymail.MBoxMan.MBoxManClass.open', myopen)
         monkeypatch.setattr('archivemymail.StatsMan.StatsManClass.new_box', mynewbox)
@@ -283,7 +295,7 @@ class TestMboxMan:
         result = self.manager.set_box(path='another_box.mbox', spambox=False)
         assert result == self.manager.currentbox
         assert result.path == 'another_box.mbox'
-        assert self.manager.spambox == False
+        assert self.manager.spambox is False
 
         # Test when re-opening the box
         assert self.manager.boxpath == 'another_box.mbox'
@@ -291,14 +303,14 @@ class TestMboxMan:
         result = self.manager.set_box(path='another_box.mbox', spambox=False)
         assert result == self.manager.currentbox
         assert result.path == 'another_box.mbox'
-        assert self.manager.spambox == False
+        assert self.manager.spambox is False
 
         # Test when changing box
         result = self.manager.set_box(path='a_box.mbox', spambox=True)
         assert result == self.manager.currentbox
         assert result.path == 'a_box.mbox'
-        assert self.manager.spambox == True
-        
+        assert self.manager.spambox is True
+
     @pytest.mark.parametrize("mid,inlist", [
         ("12345", False),
         ("23456", True),
@@ -313,7 +325,7 @@ class TestMboxMan:
             except ValueError:
                 pass
 
-        self.manager.currentbox = archivemymail.MBoxMan.NullBox('/path')
+        self.manager.currentbox = archivemymail.NullBoxClass('/path')
 
         def myadd(message):
             assert message is not None
@@ -343,17 +355,11 @@ class TestMboxMan:
         if mid is not None:
             assert mid in self.manager.msgids
 
-
-        
-
-
-
-
     @pytest.mark.parametrize("spambox,dryrun", [
-        (False,False),
-        (False,True),
-        (True,False),
-        (True,True)
+        (False, False),
+        (False, True),
+        (True, False),
+        (True, True)
     ])
     def test_leanspam(self, monkeypatch, caplog, spambox, dryrun):
         self.manager.spambox = spambox
@@ -363,9 +369,9 @@ class TestMboxMan:
             assert 'sa-learn' in fullpath
             assert '--no-sync' in fullpath
             assert '--dbpath' in fullpath
-            return 
+            return
 
-        class Pope():
+        class Pope:
             def __init__(self, args, stdin=None, stdout=None):
                 assert 'sa-learn' in args
                 assert '--no-sync' in args
@@ -374,10 +380,12 @@ class TestMboxMan:
                 assert stdout is None
                 self.returncode = 0
 
-            def communicate(self, string=None):
+            @staticmethod
+            def communicate(string=None):
                 assert string is None
 
-            def check_returncode(self):
+            @staticmethod
+            def check_returncode():
                 return 0
 
         try:
@@ -388,13 +396,13 @@ class TestMboxMan:
         archivemymail.config['bayes_dir'] = '/tmp'
         self.manager.boxroot = '/tmp'
         self.manager.boxpath = 'blah'
-        
+
         self.manager.learn()
         if dryrun:
             assert 'Would learn' in caplog.text
         else:
             assert 'Learning' in caplog.text
-        
+
     def test_close(self, monkeypatch):
         self.manager.open('pytest.mbox')
         assert self.manager.currentbox is not None
@@ -418,11 +426,11 @@ class TestMboxMan:
         self.manager.currentbox = None
         self.manager.close()
 
-        self.manager.currentbox = archivemymail.MBoxMan.NullBox('/path')
+        self.manager.currentbox = archivemymail.NullBoxClass('/path')
         self.manager.dryrun = True
         archivemymail.config['do_learning'] = True
         self.manager.close()
 
         self.manager.dryrun = False
         archivemymail.config['do_learning'] = False
-        self.manager.close()       
+        self.manager.close()

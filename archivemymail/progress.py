@@ -10,7 +10,7 @@ import archivemymail
 class Progress:
     def __init__(self, total, learning=False):
         self.total = total
-        if os.isatty(sys.stdout.fileno()):
+        if os.isatty(sys.stdout.fileno()) and total != 0:
             self.field_width = int(math.floor(math.log(total, 10)) + 1)
         else:
             self.field_width = None
@@ -24,7 +24,7 @@ class Progress:
         else:
             progress = ''
 
-        if self.learning == False:
+        if not self.learning:
             if is_spam:
                 spamham = "[SPAM]"
             else:
@@ -35,12 +35,11 @@ class Progress:
             else:
                 spamham = "[Learn-HAM ]"
             
-
         try:
             subject = archivemymail.parse_header(message['Subject'], right=50)
             line = "{progress}{spamham} {subject:50} → {box}".format(subject=subject, box=box, spamham=spamham,
-                                                                      progress=progress)
+                                                                     progress=progress)
         except TypeError:
             line = "{progress}{spamham} {subject:50} → {box}".format(subject="<No Subject>", box=box, spamham=spamham,
-                                                                      progress=progress)
+                                                                     progress=progress)
         logging.info(line)

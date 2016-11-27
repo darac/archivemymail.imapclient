@@ -23,7 +23,6 @@ def read(*filenames, **kwargs):
 
 long_description = read('README.md', 'CHANGES.txt')
 
-
 setup(
     name='archivemymail',
     version='1.0',
@@ -31,15 +30,15 @@ setup(
     install_requires=['imapclient>=1.0',
                       'pyyaml>=3.11',
                       'appdirs>=1.4.0',
-                      'genshi>=0.6'],
+                      'genshi>=0.6',
+                      'htmlmin>=0.1'],
     author_email='darac@darac.org.uk',
     description='Archive Mail to MBoxes, with filtering through Spam Learning',
     long_description=long_description,
     packages=['archivemymail', 'archivemymail.tests'],
     platforms='any',
     test_suite='archivemymail.tests.get_suite',
-    #scripts=['archivemymail.py'],
+    # scripts=['archivemymail.py'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 )
-

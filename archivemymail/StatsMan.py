@@ -5,10 +5,10 @@ import datetime
 import math
 import os
 import sqlite3
-import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import htmlmin
 from genshi.template import TemplateLoader
 from genshi.template.text import NewTextTemplate
 
@@ -67,16 +67,20 @@ class StatsManClass:
     def add(self, mbox, message):
         if self.user is None:
             raise RuntimeError("Can't add without a username")
+        try:
+            msglen = len(message.as_bytes())
+        except AttributeError:
+            msglen = len(message.as_string())
         self.cur.execute('''INSERT INTO data
                 (user, imapbox, mbox, sender, subject, date, size)
                 VALUES (?,?,?,?,?,?,?)''',
                          (self.user,
                           self.imapbox,
                           mbox,
-                          message['From'],
-                          message['Subject'],
+                          str(message['From']),
+                          str(message['Subject']),
                           message['Date'],
-                          len(message.as_string())))
+                          msglen))
 
     @staticmethod
     def text_header(text, underline='='):
@@ -113,6 +117,7 @@ class StatsManClass:
             imapboxes=imapboxes,
             messages=messages,
             boxsizes=boxsizes,
+            dry_run=archivemymail.config.dry_run,
             parse=archivemymail.parse_header)
         tmpl = loader.load('plaintext.txt', cls=NewTextTemplate)
         textstream = tmpl.generate(
@@ -120,6 +125,7 @@ class StatsManClass:
             imapboxes=imapboxes,
             messages=messages,
             boxsizes=boxsizes,
+            dry_run=archivemymail.config.dry_run,
             text_header=self.text_header,
             parse=archivemymail.parse_header)
 
@@ -130,7 +136,14 @@ class StatsManClass:
         msg['To'] = 'root'
         msg.preamble = msg['Subject']
         html = htmlstream.render('html')
+        html = htmlmin.minify(html)
         text = textstream.render('text')
         msg.attach(MIMEText(html, 'html', 'utf-8'))
         msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())
+        try:
+            print("Message size ", len(msg.as_bytes()))
+            p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_bytes())
+        except AttributeError:
+            print("Message size ", len(msg.as_string()))
+            p = archivemymail.wrappers.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())
+        p.check()

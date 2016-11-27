@@ -1,19 +1,22 @@
-import pytest
-import imapclient
 import datetime
 import mailbox
 
-import archivemymail
-import testdata
+import imapclient
+import pytest
 
-class mockserver():
+import archivemymail
+from .testdata import *
+
+
+class mockserver:
     def __init__(self, num_messages):
         self.num_messages = num_messages
         self.curr_message = 0
 
-    def select_folder(self, box):
+    @staticmethod
+    def select_folder(box):
         assert box == 'box' or box == 'inbox'
-        
+
     def search(self, searchterm):
         if 'OLD' in searchterm:
             assert 'OLD' in searchterm
@@ -31,15 +34,16 @@ class mockserver():
         msg = {}
         if num == 1:
             # No flags on the first message
-            msg['FLAGS'] = ()
+            msg[b'FLAGS'] = ()
         else:
-            msg['FLAGS'] = (imapclient.RECENT, imapclient.SEEN, imapclient.DELETED, imapclient.FLAGGED, imapclient.ANSWERED)
+            msg[b'FLAGS'] = (
+                imapclient.RECENT, imapclient.SEEN, imapclient.DELETED, imapclient.FLAGGED, imapclient.ANSWERED)
 
         try:
-            msg['RFC822'] = testdata.test_message2.as_bytes()
+            msg[b'RFC822'] = test_message2.as_bytes()
         except AttributeError:
-            msg['RFC822'] = testdata.test_message2.as_string()
-        msg['INTERNALDATE'] = datetime.datetime(2016,11,3,15,12)
+            msg[b'RFC822'] = test_message2.as_string()
+        msg[b'INTERNALDATE'] = datetime.datetime(2016, 11, 3, 15, 12)
         self.curr_message = num
 
         return {num: msg}
@@ -50,42 +54,50 @@ class mockserver():
     def close_folder(self):
         pass
 
-    def delete_folder(self, mbox_name):
+    @staticmethod
+    def delete_folder(mbox_name):
         assert mbox_name == 'box'
 
-class mockmboxman():
+
+class mockmboxman:
     def __init__(self, user, tdir, statsman, dry_run, compression):
         pass
 
-    def set_box(self, mboxname, is_spam=False):
-        assert is_spam == False
+    @staticmethod
+    def set_box(mboxname, is_spam=False):
+        assert is_spam is False
         assert mboxname.endswith('box/2016/11')
 
-    def add(self, message):
+    @staticmethod
+    def add(message):
         assert isinstance(message, mailbox.mboxMessage)
 
-class mockprogress():
+
+class mockprogress:
     def __init__(self, length):
         pass
 
-    def log(self, message, box, is_spam=False):
-        assert is_spam == False
+    @staticmethod
+    def log(message, box, is_spam=False):
+        assert is_spam is False
         assert box.endswith('box/2016/11')
         assert isinstance(message, mailbox.mboxMessage)
 
-class mocksubprocess():
+
+class mocksubprocess:
     def __init__(self, cmd, stdin=None, input=None, check=False):
         assert 'sa-learn' in cmd
         assert '--spam' in cmd or '--ham' in cmd
         assert '--no-sync' in cmd
         assert '--dbpath' in cmd
 
-        assert stdin == None
-        assert check == True
+        assert stdin is None
+        assert check is True
+
 
 @pytest.mark.parametrize('boxname', [
-    ('Archive'),
-    ('_ARCHIVE'),
+    ('Archive',),
+    ('_ARCHIVE',),
 ])
 def test_archivebox_archive(boxname):
     mbox = ([], '/', boxname)
@@ -106,19 +118,20 @@ def test_archivebox_unselectable():
     assert d['have_archived'] == False
     assert d['mbox_deleted'] == False
 
+
 @pytest.mark.parametrize('tdir', [
-    ('/bob'),
-    ('~/bob'),
-    ('/home/%u'),
+    ('/bob',),
+    ('~/bob',),
+    ('/home/%u',),
 ])
-def test_archivevbox_empty_dryrun(monkeypatch, caplog, tdir):
+def test_archivebox_empty_dryrun(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
     archivemymail.config.target_dir = tdir
-    
+
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.mboxman", mockmboxman)
+    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
     monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
     archivemymail.server = mockserver(0)
     archivemymail.config.dry_run = True
@@ -132,19 +145,20 @@ def test_archivevbox_empty_dryrun(monkeypatch, caplog, tdir):
     assert "0 messages to archive" in caplog.text
     assert "Would delete now-empty folder box" in caplog.text
 
+
 @pytest.mark.parametrize('tdir', [
-    ('/bob'),
-    ('~/bob'),
-    ('/home/%u'),
+    ('/bob',),
+    ('~/bob',),
+    ('/home/%u',),
 ])
-def test_archivevbox_empty(monkeypatch, caplog, tdir):
+def test_archivebox_empty(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
     archivemymail.config.target_dir = tdir
-    
+
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.mboxman", mockmboxman)
+    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
     monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
     archivemymail.server = mockserver(0)
     archivemymail.config.dry_run = False
@@ -158,19 +172,20 @@ def test_archivevbox_empty(monkeypatch, caplog, tdir):
     assert "0 messages to archive" in caplog.text
     assert "Deleting now-empty folder %s" in caplog.text
 
+
 @pytest.mark.parametrize('tdir', [
-    ('/bob'),
-    ('~/bob'),
-    ('/home/%u'),
+    ('/bob',),
+    ('~/bob',),
+    ('/home/%u',),
 ])
-def test_archivevbox_nonempty_dryrun(monkeypatch, caplog, tdir):
+def test_archivebox_nonempty_dryrun(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
     archivemymail.config.target_dir = tdir
-    
+
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.mboxman", mockmboxman)
+    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
     monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
     archivemymail.server = mockserver(2)
     archivemymail.config.dry_run = True
@@ -184,19 +199,20 @@ def test_archivevbox_nonempty_dryrun(monkeypatch, caplog, tdir):
     assert "===== box =====" in caplog.text
     assert "2 messages to archive" in caplog.text
 
+
 @pytest.mark.parametrize('tdir', [
-    ('/bob'),
-    ('~/bob'),
-    ('/home/%u'),
+    ('/bob',),
+    ('~/bob',),
+    ('/home/%u',),
 ])
-def test_archivevbox_nonempty_nolearn(monkeypatch, caplog, tdir):
+def test_archivebox_nonempty_nolearn(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
     archivemymail.config.target_dir = tdir
-    
+
     mbox = ([], '/', 'box')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.mboxman", mockmboxman)
+    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
     monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
     monkeypatch.setattr("archivemymail.wrappers.subprocess", mocksubprocess)
     archivemymail.server = mockserver(2)
@@ -212,19 +228,20 @@ def test_archivevbox_nonempty_nolearn(monkeypatch, caplog, tdir):
     assert "===== box =====" in caplog.text
     assert "2 messages to archive" in caplog.text
 
+
 @pytest.mark.parametrize('tdir', [
-    ('/bob'),
-    ('~/bob'),
-    ('/home/%u'),
+    ('/bob',),
+    ('~/bob',),
+    ('/home/%u',),
 ])
-def test_archivevbox_nonempty_learn(monkeypatch, caplog, tdir):
+def test_archivebox_nonempty_learn(monkeypatch, caplog, tdir):
     archivemymail.config = archivemymail.Config()
     archivemymail.config.target_dir = tdir
-    
+
     mbox = ([], '/', 'inbox')
     user = 'joe'
 
-    monkeypatch.setattr("archivemymail.mboxman", mockmboxman)
+    monkeypatch.setattr("archivemymail.MBoxMan.MBoxManClass", mockmboxman)
     monkeypatch.setattr("archivemymail.progress.Progress", mockprogress)
     monkeypatch.setattr("archivemymail.wrappers.subprocess", mocksubprocess)
     archivemymail.server = mockserver(2)

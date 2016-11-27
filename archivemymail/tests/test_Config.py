@@ -89,7 +89,7 @@ class TestConfig:
         ("--server", "imap.example.net", "server", "imap.example.net"),
         ("--debug", None, "debug", True),
     ])
-    def test_load_argsonly(self, monkeypatch, flag, arg, target, result):
+    def test_load_argsonly(self, flag, arg, target, result):
         while len(sys.argv) < 3:
             sys.argv.append('blah')
         # Set args

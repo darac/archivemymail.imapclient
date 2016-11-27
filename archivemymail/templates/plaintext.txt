@@ -1,3 +1,7 @@
+{% if dry_run %}\
+NOTE: This was only a dry-run. No mailboxes were changed.
+
+{% end %}\
 {% for user in users %}\
 {% with h=text_header("User: " + user) %}\
 $h
@@ -15,7 +19,7 @@ Size:     ${message['size']}
 Filed To: ${message['mbox']}
 
 {% end %}\
------ Archived ${boxsizes[user][imapbox]} from ${imapbox}
+----- Archived ${boxsizes[user][imapbox]} into ${imapbox}
 
 {% end %}\
 ===== Archived ${boxsizes[user]['%']} for ${user}
