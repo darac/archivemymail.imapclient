@@ -119,11 +119,10 @@ def archivebox(mbox, user):
             logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
             logging.warning("Attempting reconnection")
             archivemymail.server.reconnect()
-        except KeyboardInterrupt:
-            raise
-        except:
-            (exc_type, exc_value, _) = sys.exc_info()
+        except (imapclient.IMAPClient.Error, imaplib.IMAP4.error):
+            (exc_type, exc_value, exc_trace) = sys.exc_info()
             logging.warning("EXCEPTION processing message %d: %s - %s" % (msg_num, exc_type, exc_value))
+            [logging.warning("%s", x) for x in traceback.format_tb(exc_trace)]
             logging.warning("Skipping to next message")
 
     # Archived all the necessary messages
