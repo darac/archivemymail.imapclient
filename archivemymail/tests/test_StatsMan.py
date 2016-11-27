@@ -129,7 +129,10 @@ class TestStatsMan:
 
             @staticmethod
             def communicate(str):
-                assert b'Subject: archivemymail' in str
+                try:
+                    assert b'Subject: archivemymail' in str
+                except TypeError:
+                    assert 'Subject: archivemymail' in str
 
             @staticmethod
             def check_returncode():
