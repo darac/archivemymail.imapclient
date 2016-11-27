@@ -37,9 +37,9 @@ def learnbox(mbox):
 
             p.log(message, mbox, spamham == 'spam')
             if archivemymail.config.dry_run:
-                logging.info('Would learn %s folder: %s', spamham, mbox)
+                logging.info('Would learn %s message #%d', spamham, msg_num)
             else:
-                logging.debug('Learning %s folder: %s', spamham, mbox)
+                logging.debug('Learning %s message #%d', spamham, msg_num)
                 try:
                     m = message.as_bytes()
                 except AttributeError:

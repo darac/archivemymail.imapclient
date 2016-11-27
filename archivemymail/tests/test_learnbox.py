@@ -82,13 +82,13 @@ def test_learnbox(monkeypatch, caplog):
 
     archivemymail.config.dry_run = True
     archivemymail.learnbox('foospam')
-    assert "Would learn spam folder: foospam" in caplog.text
+    assert "Would learn spam message #0" in caplog.text
 
     archivemymail.config.dry_run = False
     archivemymail.learnbox('foospam')
-    assert "Learning spam folder: foospam" in caplog.text
+    assert "Learning spam message #1" in caplog.text
 
     monkeypatch.setattr(archivemymail, 'Progress', hamProgress)
     archivemymail.config.dry_run = True
     archivemymail.learnbox('foo')
-    assert "Would learn ham folder: foo" in caplog.text
+    assert "Would learn ham message #2" in caplog.text

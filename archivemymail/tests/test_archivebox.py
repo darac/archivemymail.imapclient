@@ -43,7 +43,7 @@ class mockserver:
         try:
             msg[b'RFC822'] = test_message2.as_bytes()
         except AttributeError:
-            msg[b'RFC822'] = test_message2.as_string()
+            msg['RFC822'] = test_message2.as_string()
         msg[b'INTERNALDATE'] = datetime.datetime(2016, 11, 3, 15, 12)
         self.curr_message = num
 
