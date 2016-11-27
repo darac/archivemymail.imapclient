@@ -30,7 +30,7 @@ def learnbox(mbox):
             try:
                 fp = email.parser.BytesFeedParser()
                 fp.feed(imapmessage[b'RFC822'])
-            except AttributeError:
+            except (AttributeError, KeyError):
                 fp = email.parser.FeedParser()
                 fp.feed(imapmessage['RFC822'])
             message = mailbox.mboxMessage(fp.close())

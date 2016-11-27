@@ -29,7 +29,7 @@ class imapserver:
         msg[b'FLAGS'] = ()
         try:
             msg[b'RFC822'] = test_message1.as_bytes()
-        except AttributeError:
+        except (AttributeError, KeyError):
             msg['RFC822'] = test_message1.as_string()
         self.curr_message = num
 
