@@ -38,7 +38,7 @@ class mockserver:
             msg[b'FLAGS'] = ()
         else:
             msg[b'FLAGS'] = (
-                imapclient.RECENT, imapclient.SEEN, imapclient.DELETED, imapclient.FLAGGED, imapclient.ANSWERED)
+                imapclient.RECENT, imapclient.SEEN, imapclient.DELETED, imapclient.FLAGGED, imapclient.ANSWERED, imapclient.DRAFT)
 
         try:
             msg[b'RFC822'] = test_message2.as_bytes()

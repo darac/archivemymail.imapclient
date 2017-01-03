@@ -14,7 +14,7 @@ $h
 
 {% for message in messages[user][imapbox] %}\
 Sender:   ${parse(message['sender'])}
-Subject:  ${parse(message['subject'], right=50)}
+Subject:  ${parse(message['subject'])}
 Size:     ${message['size']}
 Filed To: ${message['mbox']}
 

@@ -54,16 +54,18 @@ def archivebox(mbox, user):
         try:
             imapmessage = archivemymail.server.fetch(msg_num, ['FLAGS', 'RFC822', 'INTERNALDATE'])[msg_num]
             mboxflags = ''
-            if imapclient.RECENT in imapmessage[b'FLAGS']:
-                mboxflags += 'R'
-            if imapclient.SEEN in imapmessage[b'FLAGS']:
+            if imapclient.RECENT not in imapmessage[b'FLAGS']:
                 mboxflags += 'O'
+            if imapclient.SEEN in imapmessage[b'FLAGS']:
+                mboxflags += 'R'
             if imapclient.DELETED in imapmessage[b'FLAGS']:
                 mboxflags += 'D'
             if imapclient.FLAGGED in imapmessage[b'FLAGS']:
                 mboxflags += 'F'
             if imapclient.ANSWERED in imapmessage[b'FLAGS']:
                 mboxflags += 'A'
+            if imapclient.DRAFT in imapmessage[b'FLAGS']:
+                mboxflags += 'T'
             logging.debug(' + Flags: %s', mboxflags)
 
             # Get the body of the message

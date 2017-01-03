@@ -141,9 +141,10 @@ class StatsManClass:
         msg.attach(MIMEText(html, 'html', 'utf-8'))
         msg.attach(MIMEText(text, 'plain', 'utf-8'))
         try:
-            print("Message size ", len(msg.as_bytes()))
             p = archivemymail.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_bytes())
         except AttributeError:
-            print("Message size ", len(msg.as_string()))
             p = archivemymail.subprocess(["/usr/sbin/sendmail", "-t", "-oi"], input=msg.as_string())
         p.check()
+    
+        for user in users:
+            print("Archived %s for %s" % (boxsizes[user]['%'], user))
